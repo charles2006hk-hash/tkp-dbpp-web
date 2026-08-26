@@ -1,30 +1,29 @@
 import React from 'react';
 
+// 強制取消靜態快取，確保每次請求都進 Server 重新運算
 export const dynamic = 'force-dynamic';
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
+export default async function Home(props: {
+  // 兼容 Next.js 15 (Promise) 與 14 (Object) 的型別定義
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined };
 }) {
-  // 1. 檢查是否帶有預覽通關密語 (網址加上 ?preview=tkp2026 即可穿透)
-  const isPreviewBypass = searchParams.preview === 'tkp2026';
+  // 1. 解析參數 (使用 await 兼容 Next.js 15+ 規範)
+  const searchParams = await props.searchParams;
+  const isPreviewBypass = searchParams?.preview === 'tkp2026';
 
-  // 2. 檢查維護模式
+  // 2. 檢查維護模式變數
   const isMaintenanceMode = process.env.MAINTENANCE_MODE === 'true';
 
   // ==========================================
-  // 維護模式 / 升級中畫面 (中英雙語 + 專業排版)
+  // 維護模式 / 升級中畫面
   // ==========================================
   if (isMaintenanceMode && !isPreviewBypass) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-slate-200 to-slate-300 p-4 md:p-8 font-sans text-slate-800">
         <div className="max-w-3xl w-full bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] p-8 md:p-16 text-center border border-white relative overflow-hidden">
           
-          {/* 背景裝飾光暈 */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-blue-100/50 blur-3xl rounded-full pointer-events-none"></div>
 
-          {/* 動態圖示 */}
           <div className="flex justify-center mb-8 relative z-10">
             <svg className="w-14 h-14 text-[#1e3a8a] animate-[spin_4s_linear_infinite]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
@@ -32,7 +31,6 @@ export default function Home({
             </svg>
           </div>
 
-          {/* 中文提示區塊 */}
           <div className="mb-10 relative z-10">
             <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-5 tracking-widest">
               全新網站架構升級中
@@ -43,14 +41,12 @@ export default function Home({
             </p>
           </div>
 
-          {/* 視覺分隔線 */}
           <div className="flex items-center justify-center gap-3 my-10 opacity-30">
             <div className="h-px w-20 bg-slate-500"></div>
             <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
             <div className="h-px w-20 bg-slate-500"></div>
           </div>
 
-          {/* 英文提示區塊 */}
           <div className="mb-12 relative z-10">
             <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-4 uppercase tracking-[0.2em]">
               System Upgrade in Progress
@@ -61,7 +57,6 @@ export default function Home({
             </p>
           </div>
 
-          {/* 底部標識 */}
           <div className="pt-8 border-t border-slate-200/60 relative z-10">
             <p className="text-xs font-bold text-slate-700 tracking-[0.15em] mb-1">
               鄧鏡波學校鮑思高同學會 (TKP-DBPP)
@@ -76,7 +71,7 @@ export default function Home({
   }
 
   // ==========================================
-  // 正式頁面代碼 (僅持有通關密語或關閉維護模式時可見)
+  // 正式頁面代碼 (開發中/預覽版)
   // ==========================================
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
