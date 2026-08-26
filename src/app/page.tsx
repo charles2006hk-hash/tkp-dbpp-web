@@ -1,37 +1,70 @@
 import React from 'react';
 
-// 在 Next.js App Router 中，頁面元件可以直接接收 searchParams 作為 props
 export default function Home({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  // 1. 檢查是否帶有預覽通關密語 (可自行修改密碼)
+  // 1. 檢查是否帶有預覽通關密語 (網址加上 ?preview=tkp2026 即可穿透)
   const isPreviewBypass = searchParams.preview === 'tkp2026';
 
-  // 2. 檢查 Vercel 環境變數是否開啟了維護模式
-  // (需在 Vercel 後台設定 MAINTENANCE_MODE=true)
+  // 2. 檢查維護模式
   const isMaintenanceMode = process.env.MAINTENANCE_MODE === 'true';
 
-  // 如果開啟維護模式，且沒有通關密語，則渲染「系統升級中」畫面
+  // ==========================================
+  // 維護模式 / 升級中畫面 (中英雙語 + 專業排版)
+  // ==========================================
   if (isMaintenanceMode && !isPreviewBypass) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 p-4 font-sans text-slate-800">
-        <div className="max-w-2xl w-full bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-10 md:p-14 text-center border border-white">
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 tracking-wide">
+      <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-slate-200 to-slate-300 p-4 md:p-8 font-sans text-slate-800">
+        <div className="max-w-3xl w-full bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] p-8 md:p-16 text-center border border-white relative overflow-hidden">
+          
+          {/* 背景裝飾光暈 */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-blue-100/50 blur-3xl rounded-full pointer-events-none"></div>
+
+          {/* 動態圖示 */}
+          <div className="flex justify-center mb-8 relative z-10">
+            <svg className="w-14 h-14 text-[#1e3a8a] animate-[spin_4s_linear_infinite]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
+
+          {/* 中文提示區塊 */}
+          <div className="mb-10 relative z-10">
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-5 tracking-widest">
               全新網站架構升級中
             </h1>
-            <p className="text-slate-500 text-sm md:text-base leading-relaxed">
+            <p className="text-slate-600 text-sm md:text-base leading-loose max-w-xl mx-auto break-keep">
               為了提供更流暢的服務與數位體驗，我們正在進行系統底層重構與資料庫遷移作業。<br className="hidden md:block" />
               網站將於近期以全新面貌重新上線，敬請期待。
             </p>
           </div>
-          <div className="mt-8 pt-6 border-t border-slate-200">
-            <p className="text-xs font-bold text-slate-700 tracking-wider">
+
+          {/* 視覺分隔線 */}
+          <div className="flex items-center justify-center gap-3 my-10 opacity-30">
+            <div className="h-px w-20 bg-slate-500"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+            <div className="h-px w-20 bg-slate-500"></div>
+          </div>
+
+          {/* 英文提示區塊 */}
+          <div className="mb-12 relative z-10">
+            <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-4 uppercase tracking-[0.2em]">
+              System Upgrade in Progress
+            </h2>
+            <p className="text-slate-500 text-sm leading-loose max-w-xl mx-auto">
+              We are currently upgrading our system infrastructure and migrating databases to bring you a better digital experience. <br className="hidden md:block" />
+              The website will be back online soon with a brand new look.
+            </p>
+          </div>
+
+          {/* 底部標識 */}
+          <div className="pt-8 border-t border-slate-200/60 relative z-10">
+            <p className="text-xs font-bold text-slate-700 tracking-[0.15em] mb-1">
               鄧鏡波學校鮑思高同學會 (TKP-DBPP)
             </p>
-            <p className="text-[10px] text-slate-400 mt-2 tracking-widest uppercase">
+            <p className="text-[9px] text-slate-400 tracking-[0.2em] uppercase font-medium mt-2">
               Powered by YIMI International
             </p>
           </div>
@@ -41,11 +74,10 @@ export default function Home({
   }
 
   // ==========================================
-  // 以下為原本的頁面代碼 (僅持有通關密語或關閉維護模式時可見)
+  // 正式頁面代碼 (僅持有通關密語或關閉維護模式時可見)
   // ==========================================
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-      {/* 導覽列 Header */}
       <header className="bg-[#1e3a8a] text-white shadow-md sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-lg md:text-2xl font-bold tracking-wider">
@@ -63,7 +95,6 @@ export default function Home({
         </div>
       </header>
 
-      {/* 視覺主視覺 Hero Section */}
       <section className="bg-blue-50 py-20 px-4 text-center border-b border-blue-100">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-extrabold text-blue-900 mb-6 leading-tight">
@@ -83,7 +114,6 @@ export default function Home({
         </div>
       </section>
 
-      {/* 最新消息 Latest News */}
       <section className="py-16 px-4 max-w-6xl mx-auto">
         <div className="flex justify-between items-end mb-8 border-b pb-4">
           <h3 className="text-2xl font-bold text-gray-800 border-l-4 border-[#1e3a8a] pl-4">
@@ -93,7 +123,6 @@ export default function Home({
         </div>
         
         <div className="grid md:grid-cols-3 gap-8">
-          {/* 新聞卡片 1 */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
             <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-400 font-medium">
               [活動縮圖佔位]
@@ -108,7 +137,6 @@ export default function Home({
             </div>
           </div>
 
-          {/* 新聞卡片 2 */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
             <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-400 font-medium">
               [活動縮圖佔位]
@@ -123,7 +151,6 @@ export default function Home({
             </div>
           </div>
 
-          {/* 新聞卡片 3 */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
             <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-400 font-medium">
               [活動縮圖佔位]
@@ -140,7 +167,6 @@ export default function Home({
         </div>
       </section>
 
-      {/* 頁尾 Footer */}
       <footer className="bg-gray-900 text-gray-400 py-10 text-center text-sm mt-10">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
           <p>&copy; 2026 鄧鏡波學校鮑思高同學會 TKP-DBPP. All rights reserved.</p>
