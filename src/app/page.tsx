@@ -1,9 +1,50 @@
 import React from 'react';
 
-export default function Home() {
+// 在 Next.js App Router 中，頁面元件可以直接接收 searchParams 作為 props
+export default function Home({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  // 1. 檢查是否帶有預覽通關密語 (可自行修改密碼)
+  const isPreviewBypass = searchParams.preview === 'tkp2026';
+
+  // 2. 檢查 Vercel 環境變數是否開啟了維護模式
+  // (需在 Vercel 後台設定 MAINTENANCE_MODE=true)
+  const isMaintenanceMode = process.env.MAINTENANCE_MODE === 'true';
+
+  // 如果開啟維護模式，且沒有通關密語，則渲染「系統升級中」畫面
+  if (isMaintenanceMode && !isPreviewBypass) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 p-4 font-sans text-slate-800">
+        <div className="max-w-2xl w-full bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-10 md:p-14 text-center border border-white">
+          <div className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 tracking-wide">
+              全新網站架構升級中
+            </h1>
+            <p className="text-slate-500 text-sm md:text-base leading-relaxed">
+              為了提供更流暢的服務與數位體驗，我們正在進行系統底層重構與資料庫遷移作業。<br className="hidden md:block" />
+              網站將於近期以全新面貌重新上線，敬請期待。
+            </p>
+          </div>
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <p className="text-xs font-bold text-slate-700 tracking-wider">
+              鄧鏡波學校鮑思高同學會 (TKP-DBPP)
+            </p>
+            <p className="text-[10px] text-slate-400 mt-2 tracking-widest uppercase">
+              Powered by YIMI International
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 以下為原本的頁面代碼 (僅持有通關密語或關閉維護模式時可見)
+  // ==========================================
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-      
       {/* 導覽列 Header */}
       <header className="bg-[#1e3a8a] text-white shadow-md sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -52,7 +93,6 @@ export default function Home() {
         </div>
         
         <div className="grid md:grid-cols-3 gap-8">
-          
           {/* 新聞卡片 1 */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
             <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-400 font-medium">
@@ -97,7 +137,6 @@ export default function Home() {
               <p className="text-xs text-gray-400">發表於 2026-03-20</p>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -112,7 +151,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-
     </div>
   );
 }
