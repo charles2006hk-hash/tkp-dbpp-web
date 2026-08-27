@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Image from 'next/image';
+import CardImage from '@/components/CardImage';
 
 // 1. 初始化 Firebase Client SDK (唯讀模式，放明碼無安全風險)
 const firebaseConfig = {
@@ -62,36 +63,12 @@ export default async function NewsPage() {
               rel="noopener noreferrer"
               className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
-              {/* 多媒體 / 預設佔位圖 區塊 */}
-              <div className="relative h-48 w-full bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex-shrink-0">
-                {post.imageUrl ? (
-                  <Image
-                    src={post.imageUrl}
-                    alt={post.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                ) : (
-                  // 沒有圖片時的優雅 Fallback 設計
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100">
-                    <span className="text-2xl font-black text-slate-300 tracking-widest">
-                      TKP-DBPP
-                    </span>
-                  </div>
-                )}
-
-                {/* 影片播放圖示提示 */}
-                {post.isVideo && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-transparent transition-colors">
-                    <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
-                      <svg className="w-6 h-6 text-blue-600 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M4 4l12 6-12 6z"></path>
-                      </svg>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* 多媒體 / 防破圖攔截區塊 */}
+              <CardImage
+                imageUrl={post.imageUrl}
+                title={post.title}
+                isVideo={post.isVideo}
+              />
 
               {/* 內文區塊 */}
               <div className="p-5 flex flex-col flex-grow">
