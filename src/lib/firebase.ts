@@ -1,8 +1,8 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage'; // 新增 Storage 引入
 
-// 讀取 Vercel (或本地 .env.local) 中的環境變數
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -12,9 +12,8 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Next.js 在 Server-side 渲染 (SSR/ISR) 時會重複執行代碼，
-// 使用 getApps().length 檢查可避免 Firebase 發生 "App already exists" 報錯。
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
+const storage = getStorage(app); // 初始化 Storage
 
-export { app, db };
+export { app, db, storage };
