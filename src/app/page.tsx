@@ -50,13 +50,16 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-800">
       <Header />
       
-      {/* 主視覺區 */}
+      {/* 主視覺區：替換為 TKP 核心校訓 */}
       <section className="relative bg-blue-900 py-32 overflow-hidden">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-blue-900 to-blue-900"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight drop-shadow-md">
-            傳承鮑思高精神 <br className="hidden md:block" /><span className="text-blue-300">凝聚舊生力量</span>
+          <h2 className="text-4xl md:text-5xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight drop-shadow-md">
+            立己立人 <br className="hidden md:block" /><span className="text-blue-300">We Love, We Care</span>
           </h2>
+          <p className="mt-4 text-xl text-blue-100 max-w-2xl mx-auto font-light leading-relaxed">
+            傳承鮑思高精神，凝聚舊生力量。歡迎回到鄧鏡波學校鮑思高同學會的大家庭，與昔日同窗攜手共創未來。
+          </p>
           <div className="mt-10 flex justify-center gap-4">
             <Link href="/news" className="px-8 py-3 bg-white text-blue-900 font-bold rounded-full hover:bg-blue-50 transition-all shadow-lg hover:-translate-y-0.5">
               瀏覽最新動態
@@ -66,22 +69,24 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
       </section>
 
       {/* 年度活動模組 */}
-      <section id="events" className="py-24 bg-slate-900 text-white">
+      {/* 最新動態預覽：改連至站內新聞頁 */}
+      <section className="py-24 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="text-3xl font-extrabold mb-4">近期活動與聚會</h3>
+          <div className="flex justify-between items-end mb-12">
+            <h3 className="text-3xl font-extrabold text-blue-900">校友會動態</h3>
+            <Link href="/news" className="hidden sm:inline-flex items-center text-blue-600 font-semibold hover:text-blue-800 transition-colors">
+              查看全部新聞 &rarr;
+            </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { title: "2026 校友會週年大會 (AGM)", date: "2026年11月", desc: "誠邀各位會員出席，共商會務發展及票選新一屆幹事。" },
-              { title: "鄧鏡波盃 舊生籃球邀請賽", date: "2026年12月", desc: "穿上波衫，重返修院球場，與師兄弟切磋球技。" },
-              { title: "鮑思高瞻禮感恩祭暨舊生晚宴", date: "2027年1月", desc: "紀念會祖聖若望·鮑思高，齊聚一堂感念恩師教導。" },
-            ].map((event, idx) => (
-              <div key={idx} className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-blue-500 transition-colors">
-                <div className="text-blue-400 font-bold tracking-wider mb-2">{event.date}</div>
-                <h4 className="text-xl font-bold mb-3">{event.title}</h4>
-                <p className="text-slate-400 text-sm leading-relaxed mb-6">{event.desc}</p>
-              </div>
+            {latestNews.map((post) => (
+              <Link key={post.id} href={`/news/${post.id}`} className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <CardImage imageUrl={post.imageUrl} title={post.title} isVideo={post.isVideo} />
+                <div className="p-6 flex flex-col flex-grow">
+                  <time className="text-xs font-bold text-blue-600 mb-2 block tracking-wider">{post.date}</time>
+                  <h4 className="text-lg font-bold text-slate-800 mb-3 line-clamp-2 leading-snug group-hover:text-blue-600">{post.title}</h4>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
