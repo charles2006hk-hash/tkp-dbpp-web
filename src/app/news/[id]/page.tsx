@@ -1,20 +1,9 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase'; // 引入集中管理的 db 實例
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCVpNegHunQSUNWAg5slp5TReqstk6eX5Y",
-  authDomain: "tkp-dbpp.firebaseapp.com",
-  projectId: "tkp-dbpp",
-  storageBucket: "tkp-dbpp.firebasestorage.app",
-  messagingSenderId: "994817627378",
-  appId: "1:994817627378:web:11c021cec20e884bce2c6b"
-};
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
 
 // Next.js 15: params 是一個 Promise
 export default async function NewsDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,7 +13,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
   const docSnap = await getDoc(docRef);
 
   if (!docSnap.exists()) {
-    notFound(); // 找不到資料時自動跳轉 404
+    notFound();
   }
 
   const post = { id: docSnap.id, ...docSnap.data() } as any;
@@ -36,7 +25,6 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
         
         {/* 標題與 Metadata */}
         <header className="mb-8 text-center">
-          {/* 預留 CMS Tag 功能 */}
           <div className="mb-4 flex justify-center gap-2">
             {post.tags ? post.tags.map((tag: string) => (
               <span key={tag} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">{tag}</span>
@@ -48,7 +36,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
           <div className="text-slate-500 font-medium">{post.date}</div>
         </header>
 
-        {/* 媒體呈現區塊：優先顯示 YouTube (未來CMS支援)，否則顯示圖片 */}
+        {/* 媒體呈現區塊：優先顯示 YouTube，否則顯示圖片 */}
         <div className="relative w-full aspect-video bg-slate-200 rounded-2xl overflow-hidden mb-12 shadow-lg">
           {post.youtubeUrl ? (
             <iframe 
@@ -72,7 +60,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
           {post.content}
         </article>
 
-        {/* 歷史資料回溯按鈕 (供舊 Facebook 資料使用) */}
+        {/* 歷史資料回溯按鈕 (舊 Facebook 資料使用) */}
         {post.facebookUrl && (
           <div className="mt-16 text-center border-t border-slate-200 pt-8">
             <a href={post.facebookUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-sm text-blue-600 hover:text-blue-800 font-semibold border border-blue-200 rounded-full px-6 py-2 hover:bg-blue-50 transition-colors">
