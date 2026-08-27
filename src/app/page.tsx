@@ -1,23 +1,14 @@
 import Link from 'next/link';
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import Image from 'next/image';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase'; // 引入集中管理的 db 實例
 import CardImage from '@/components/CardImage';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import Image from 'next/image';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCVpNegHunQSUNWAg5slp5TReqstk6eX5Y",
-  authDomain: "tkp-dbpp.firebaseapp.com",
-  projectId: "tkp-dbpp",
-  storageBucket: "tkp-dbpp.firebasestorage.app",
-  messagingSenderId: "994817627378",
-  appId: "1:994817627378:web:11c021cec20e884bce2c6b"
-};
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
-export const revalidate = 60;
+export const revalidate = 60; // ISR：每 60 秒更新一次首頁快取
 
+// 獲取最新 3 筆新聞
 async function fetchLatestNews() {
   const newsRef = collection(db, 'news');
   const q = query(newsRef, orderBy('createdAt', 'desc'), limit(3));
@@ -29,13 +20,7 @@ function MaintenanceView() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-800 px-4 text-center">
       <div className="relative w-24 h-28 mb-6">
-        <Image 
-          src="/logo.png" 
-          alt="鄧鏡波學校 Logo" 
-          fill
-          className="object-contain"
-          priority
-        />
+        <Image src="/logo.png" alt="鄧鏡波學校 Logo" fill className="object-contain" priority />
       </div>
       <h1 className="text-3xl font-extrabold text-blue-900 mb-4 tracking-tight">鄧鏡波學校鮑思高同學會</h1>
       <p className="text-lg text-slate-500 max-w-md mx-auto mb-8">全新校友會網站正在進行升級與測試。<br />敬請期待，我們即將以全新面貌與各位校友見面。</p>
@@ -67,7 +52,7 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
         </div>
       </section>
 
-      {/* 恢復：關於母校與鮑思高精神 */}
+      {/* 關於母校與鮑思高精神 */}
       <section id="about" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -108,7 +93,7 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
         </div>
       </section>
 
-      {/* 恢復：年度活動模組 */}
+      {/* 年度活動模組 */}
       <section id="events" className="py-24 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -131,7 +116,7 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
         </div>
       </section>
 
-      {/* 最新動態預覽：正確連至站內新聞頁 */}
+      {/* 最新動態預覽 */}
       <section className="py-24 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-12">
@@ -158,7 +143,7 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
       <section id="membership" className="py-20 bg-blue-600 text-center">
         <div className="max-w-4xl mx-auto px-4">
           <h3 className="text-3xl font-extrabold text-white mb-6">歡迎加入鄧鏡波學校鮑思高同學會</h3>
-          <a href="#" className="inline-block px-8 py-4 bg-white text-blue-900 font-bold rounded-full hover:bg-blue-50 shadow-lg">下載入會申請表</a>
+          <a href="/membership" className="inline-block px-8 py-4 bg-white text-blue-900 font-bold rounded-full hover:bg-blue-50 shadow-lg">了解更多</a>
         </div>
       </section>
 
