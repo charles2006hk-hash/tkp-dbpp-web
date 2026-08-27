@@ -4,6 +4,7 @@ import { getFirestore, collection, getDocs, query, orderBy, limit } from 'fireba
 import CardImage from '@/components/CardImage';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Image from 'next/image';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCVpNegHunQSUNWAg5slp5TReqstk6eX5Y",
@@ -27,7 +28,16 @@ async function fetchLatestNews() {
 function MaintenanceView() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-800 px-4 text-center">
-      <div className="w-20 h-20 bg-blue-900 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg mb-6">TKP</div>
+      {/* 替換為高清 Logo */}
+      <div className="relative w-24 h-28 mb-6">
+        <Image 
+          src="/logo.png" 
+          alt="鄧鏡波學校 Logo" 
+          fill
+          className="object-contain"
+          priority
+        />
+      </div>
       <h1 className="text-3xl font-extrabold text-blue-900 mb-4 tracking-tight">鄧鏡波學校鮑思高同學會</h1>
       <p className="text-lg text-slate-500 max-w-md mx-auto mb-8">全新校友會網站正在進行升級與測試。<br />敬請期待，我們即將以全新面貌與各位校友見面。</p>
       <div className="h-1 w-24 bg-blue-600 rounded-full mx-auto animate-pulse"></div>
