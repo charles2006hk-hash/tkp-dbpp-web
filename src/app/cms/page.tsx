@@ -1,28 +1,25 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 
-// 統一的數據介面，包含新聞與活動的所有可能欄位
 interface ContentData {
   id: string;
   title: string;
   content: string;
   imageUrl: string;
-  date: string; // 發佈日期
+  date: string;
   createdAt?: any;
-  // 新聞專屬
   youtubeUrl?: string;
   tags?: string[];
-  // 活動專屬
   status?: 'upcoming' | 'past';
-  eventDateTime?: string; // 實際舉辦時間
-  contactInfo?: string;   // 聯絡人/電話
-  notificationEmail?: string; // 接收報名通知的 Email
-  registrationUrl?: string; // 外部報名表單連結
+  eventDateTime?: string;
+  contactInfo?: string;
+  notificationEmail?: string;
+  registrationUrl?: string;
 }
 
 export default function CMSDashboard() {
@@ -34,6 +31,9 @@ export default function CMSDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentPost, setCurrentPost] = useState<Partial<ContentData>>({});
   
+  // 新增：Seeder 狀態
+  const [isSeeding, setIsSeeding] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function CMSDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsAuthenticated(true); // TODO: 上線前務必接入 Firebase Auth signInWithEmailAndPassword
+    setIsAuthenticated(true); // TODO: 替換為 Firebase Auth signInWithEmailAndPassword
   };
 
   const fetchData = async () => {
@@ -62,7 +62,6 @@ export default function CMSDashboard() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // 共通欄位
       const baseData = {
         title: currentPost.title || '',
         date: currentPost.date || new Date().toISOString().split('T')[0],
@@ -71,7 +70,6 @@ export default function CMSDashboard() {
         createdAt: currentPost.createdAt || new Date(),
       };
 
-      // 根據當前 Tab 組合專屬欄位
       const postData = activeTab === 'news' 
         ? { 
             ...baseData, 
@@ -112,7 +110,91 @@ export default function CMSDashboard() {
     }
   };
 
-  // Canvas 圖片壓縮 (1024px, 70% Quality)
+  // 內建 Seeder 腳本：清洗並導入活動資料
+  const handleSeedEvents = async () => {
+    const confirmMsg = "⚠️ 危險操作！\n\n這將會【清空】目前資料庫中所有的活動資料，並重新寫入 4 筆範例數據。\n請問確定要執行嗎？";
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsSeeding(true);
+    try {
+      const eventsRef = collection(db, 'events');
+      const snapshot = await getDocs(eventsRef);
+      const batch = writeBatch(db);
+
+      // 1. 清除舊資料
+      snapshot.docs.forEach((document) => {
+        batch.delete(document.ref);
+      });
+
+      // 2. 準備範例資料
+      const sampleEvents = [
+        {
+          title: "2026 校友會週年大會 (AGM)",
+          date: "2026-10-01",
+          eventDateTime: "2026-11-15 14:00",
+          content: "誠邀各位會員出席，共商會務發展及票選新一屆幹事。會後將備有茶點招待。\n\n流程：\n1. 會長致辭\n2. 財政報告\n3. 新一屆幹事選舉\n4. 自由交流與茶會",
+          imageUrl: "",
+          status: "upcoming",
+          contactInfo: "陳秘書 9123-4567",
+          notificationEmail: "admin@tkp-dbpp.org.hk",
+          registrationUrl: "https://forms.gle/example1",
+          createdAt: new Date(),
+        },
+        {
+          title: "鄧鏡波盃 舊生籃球邀請賽",
+          date: "2026-10-15",
+          eventDateTime: "2026-12-10 09:00",
+          content: "穿上波衫，重返修院球場！歡迎各屆校友組隊參加，與師兄弟切磋球技，重溫熱血青春。\n\n報名費：每隊 $500\n名額：16 隊 (先到先得)",
+          imageUrl: "",
+          status: "upcoming",
+          contactInfo: "李副會長 9876-5432",
+          notificationEmail: "admin@tkp-dbpp.org.hk",
+          registrationUrl: "https://forms.gle/example2",
+          createdAt: new Date(),
+        },
+        {
+          title: "鮑思高瞻禮感恩祭暨舊生晚宴",
+          date: "2026-11-01",
+          eventDateTime: "2027-01-31 18:00",
+          content: "紀念會祖聖若望·鮑思高，齊聚一堂感念恩師教導。晚宴將設有大抽獎及校友表演環節。\n\n地點：母校大禮堂\n餐券：每位 $300 (大小同價)",
+          imageUrl: "",
+          status: "upcoming",
+          contactInfo: "黃司庫 6123-8888",
+          notificationEmail: "",
+          registrationUrl: "",
+          createdAt: new Date(),
+        },
+        {
+          title: "2025 校友會新春盆菜宴",
+          date: "2025-01-10",
+          eventDateTime: "2025-02-15 19:00",
+          content: "超過三百名校友及老師聚首母校操場，共享傳統盆菜，氣氛熱鬧，圓滿結束。感謝各位校友的鼎力支持！\n\n當晚除了豐富的盆菜，還有師生才藝表演以及幸運大抽獎，讓大家在歡笑聲中度過了一個難忘的夜晚。",
+          imageUrl: "",
+          status: "past",
+          contactInfo: "",
+          notificationEmail: "",
+          registrationUrl: "",
+          createdAt: new Date(),
+        }
+      ];
+
+      // 3. 寫入新資料
+      sampleEvents.forEach((event) => {
+        const newDocRef = doc(eventsRef);
+        batch.set(newDocRef, event);
+      });
+
+      await batch.commit();
+      alert("✅ 清洗與導入成功！");
+      fetchData(); // 重新拉取資料刷新列表
+    } catch (error: any) {
+      console.error(error);
+      alert(`❌ 導入失敗：${error.message}`);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -161,7 +243,6 @@ export default function CMSDashboard() {
     };
   };
 
-  // 簡易 HTML 標籤插入
   const insertTextAtCursor = (textToInsert: string) => {
     const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
     if (!textarea) return;
@@ -176,9 +257,6 @@ export default function CMSDashboard() {
     }, 0);
   };
 
-  // -------------------------
-  // 視圖 A: 登入
-  // -------------------------
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
@@ -203,9 +281,6 @@ export default function CMSDashboard() {
     );
   }
 
-  // -------------------------
-  // 視圖 B: CMS 儀表板
-  // -------------------------
   return (
     <div className="min-h-screen flex bg-slate-50">
       <aside className="w-64 bg-slate-900 text-white flex flex-col hidden md:flex fixed h-full z-10">
@@ -226,9 +301,21 @@ export default function CMSDashboard() {
       <main className="flex-grow md:ml-64 p-8">
         <div className="max-w-6xl mx-auto">
           <header className="flex justify-between items-end mb-8">
-            <h1 className="text-3xl font-extrabold text-slate-900">
-              {activeTab === 'news' ? '新聞動態管理' : '活動花絮與報名管理'}
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-extrabold text-slate-900">
+                {activeTab === 'news' ? '新聞動態管理' : '活動花絮與報名管理'}
+              </h1>
+              {/* 開發測試專用：清洗資料按鈕 (僅在活動 Tab 顯示) */}
+              {!isEditing && activeTab === 'events' && (
+                <button 
+                  onClick={handleSeedEvents} 
+                  disabled={isSeeding}
+                  className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors"
+                >
+                  {isSeeding ? '處理中...' : '🧹 重置範例資料'}
+                </button>
+              )}
+            </div>
             {!isEditing && (
               <button onClick={() => { setCurrentPost({}); setIsEditing(true); }} className={`text-white px-6 py-2 rounded-lg font-bold shadow-md ${activeTab === 'news' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
                 + 新增內容
@@ -270,7 +357,6 @@ export default function CMSDashboard() {
                   )}
                 </div>
 
-                {/* 根據模組切換專屬表單區塊 */}
                 {activeTab === 'news' ? (
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">YouTube 影片 URL (選填)</label>
