@@ -5,16 +5,16 @@ import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc, updateDoc 
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import Image from 'next/image';
-import Link from 'next/link';
 
-// 定義通用的資料結構 (新聞與活動共用)
 interface ContentData {
   id: string;
   title: string;
   content: string;
   imageUrl: string;
-  youtubeUrl: string;
-  tags: string[];
+  youtubeUrl?: string; // 新聞專屬
+  tags?: string[];
+  status?: 'upcoming' | 'past'; // 活動專屬
+  registrationUrl?: string; // 活動專屬
   date: string;
   createdAt?: any;
 }
@@ -25,13 +25,11 @@ export default function CMSDashboard() {
   const [dataList, setDataList] = useState<ContentData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
   const [isEditing, setIsEditing] = useState(false);
   const [currentPost, setCurrentPost] = useState<Partial<ContentData>>({});
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 初始化或切換 Tab 時拉取對應集合的數據
   useEffect(() => {
     if (isAuthenticated) fetchData();
   }, [isAuthenticated, activeTab]);
@@ -41,7 +39,6 @@ export default function CMSDashboard() {
     setIsAuthenticated(true); // TODO: 替換為 Firebase Auth
   };
 
-  // 動態讀取 news 或 events 集合
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -59,15 +56,18 @@ export default function CMSDashboard() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const postData = {
+      // 根據不同模塊，組合不同的數據結構
+      const baseData = {
         title: currentPost.title || '',
         date: currentPost.date || new Date().toISOString().split('T')[0],
         content: currentPost.content || '',
         imageUrl: currentPost.imageUrl || '',
-        youtubeUrl: currentPost.youtubeUrl || '',
-        tags: currentPost.tags || (activeTab === 'news' ? ['新聞'] : ['活動']),
         createdAt: currentPost.createdAt || new Date(),
       };
+
+      const postData = activeTab === 'news' 
+        ? { ...baseData, youtubeUrl: currentPost.youtubeUrl || '', tags: currentPost.tags || ['新聞'] }
+        : { ...baseData, status: currentPost.status || 'upcoming', registrationUrl: currentPost.registrationUrl || '' };
 
       if (currentPost.id) {
         await updateDoc(doc(db, activeTab, currentPost.id), postData);
@@ -94,7 +94,7 @@ export default function CMSDashboard() {
     }
   };
 
-  // 圖片壓縮與上傳 (利用 HTML5 Canvas)
+  // 圖片壓縮與上傳 (HTML5 Canvas)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -109,7 +109,7 @@ export default function CMSDashboard() {
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let { width, height } = img;
-        const maxDim = 1024; // 限制最大寬高
+        const maxDim = 1024;
 
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -125,7 +125,6 @@ export default function CMSDashboard() {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // 壓縮為 70% 質量的 JPEG (約 100kb 左右)
         canvas.toBlob(async (blob) => {
           if (!blob) return;
           const storageRef = ref(storage, `${activeTab}/${Date.now()}_compressed.jpg`);
@@ -144,16 +143,13 @@ export default function CMSDashboard() {
     };
   };
 
-  // 簡易文本編輯工具 (插入 HTML 標籤)
   const insertTextAtCursor = (textToInsert: string) => {
     const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
     if (!textarea) return;
-    
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const currentVal = currentPost.content || '';
     const newVal = currentVal.substring(0, start) + textToInsert + currentVal.substring(end);
-    
     setCurrentPost({...currentPost, content: newVal});
     setTimeout(() => {
       textarea.focus();
@@ -161,20 +157,16 @@ export default function CMSDashboard() {
     }, 0);
   };
 
-  // ==========================================
-  // 視圖 A: 登入畫面
-  // ==========================================
+  // 登入畫面
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-blue-900 rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-4">TKP</div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2">後台管理系統</h2>
-          
           <form onSubmit={handleLogin} className="space-y-4 text-left mt-8">
             <div>
               <label className="block text-sm font-medium text-slate-700">Email</label>
-              {/* 修正了文字顏色 text-slate-900 */}
               <input type="email" required defaultValue="admin@tkp-dbpp.org.hk" className="mt-1 block w-full rounded-md border-slate-300 bg-white text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2" />
             </div>
             <div>
@@ -190,12 +182,9 @@ export default function CMSDashboard() {
     );
   }
 
-  // ==========================================
-  // 視圖 B: CMS Dashboard
-  // ==========================================
+  // 主控台畫面
   return (
     <div className="min-h-screen flex bg-slate-50">
-      {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col hidden md:flex fixed h-full z-10">
         <div className="p-6 border-b border-slate-800 flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center font-bold text-xs">TKP</div>
@@ -211,16 +200,12 @@ export default function CMSDashboard() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-grow md:ml-64 p-8">
         <div className="max-w-6xl mx-auto">
-          
           <header className="flex justify-between items-end mb-8">
-            <div>
-              <h1 className="text-3xl font-extrabold text-slate-900">
-                {activeTab === 'news' ? '新聞動態管理' : '活動花絮管理'}
-              </h1>
-            </div>
+            <h1 className="text-3xl font-extrabold text-slate-900">
+              {activeTab === 'news' ? '新聞動態管理' : '活動花絮管理'}
+            </h1>
             {!isEditing && (
               <button onClick={() => { setCurrentPost({}); setIsEditing(true); }} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-md">
                 + 新增內容
@@ -241,12 +226,11 @@ export default function CMSDashboard() {
                     <input type="text" required value={currentPost.title || ''} onChange={e => setCurrentPost({...currentPost, title: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">發佈日期 (Date) *</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">{activeTab === 'events' ? '舉辦日期 (Date) *' : '發佈日期 (Date) *'}</label>
                     <input type="date" required value={currentPost.date || ''} onChange={e => setCurrentPost({...currentPost, date: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
 
-                {/* 圖片上傳區塊 */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">封面圖片 (上傳會自動壓縮)</label>
                   <div className="flex items-center gap-4 mb-2">
@@ -256,7 +240,6 @@ export default function CMSDashboard() {
                     <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                     <input type="url" value={currentPost.imageUrl || ''} onChange={e => setCurrentPost({...currentPost, imageUrl: e.target.value})} placeholder="或直接貼上圖片網址" className="flex-grow border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" />
                   </div>
-                  {/* 預覽小圖 */}
                   {currentPost.imageUrl && (
                     <div className="mt-2 relative w-32 h-32 border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
                       <Image src={currentPost.imageUrl} alt="預覽圖" fill className="object-cover" />
@@ -264,15 +247,31 @@ export default function CMSDashboard() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">YouTube 影片 URL (選填)</label>
-                  <input type="url" value={currentPost.youtubeUrl || ''} onChange={e => setCurrentPost({...currentPost, youtubeUrl: e.target.value})} placeholder="https://www.youtube.com/embed/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
+                {/* 動態表單：根據 Tab 顯示不同欄位 */}
+                {activeTab === 'news' ? (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">YouTube 影片 URL (選填)</label>
+                    <input type="url" value={currentPost.youtubeUrl || ''} onChange={e => setCurrentPost({...currentPost, youtubeUrl: e.target.value})} placeholder="https://www.youtube.com/embed/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">活動狀態</label>
+                      <select value={currentPost.status || 'upcoming'} onChange={e => setCurrentPost({...currentPost, status: e.target.value as 'upcoming' | 'past'})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="upcoming">即將舉辦</option>
+                        <option value="past">圓滿結束</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">報名連結 (選填)</label>
+                      <input type="url" value={currentPost.registrationUrl || ''} onChange={e => setCurrentPost({...currentPost, registrationUrl: e.target.value})} placeholder="https://forms.gle/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                  </div>
+                )}
 
-                {/* 內容與簡單編輯器 */}
                 <div>
                   <div className="flex justify-between items-end mb-1">
-                    <label className="block text-sm font-semibold text-slate-700">內容 (Content) *</label>
+                    <label className="block text-sm font-semibold text-slate-700">詳細內容 (Content) *</label>
                     <div className="flex gap-2">
                       <button type="button" onClick={() => insertTextAtCursor('<b>粗體字</b>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded hover:bg-slate-300"><b>B</b></button>
                       <button type="button" onClick={() => insertTextAtCursor('\n<br/>\n')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded hover:bg-slate-300">換行</button>
@@ -280,7 +279,6 @@ export default function CMSDashboard() {
                     </div>
                   </div>
                   <textarea id="content-editor" required rows={12} value={currentPost.content || ''} onChange={e => setCurrentPost({...currentPost, content: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none whitespace-pre-wrap font-mono text-sm leading-relaxed"></textarea>
-                  <p className="text-xs text-slate-500 mt-1">支援直接換行或使用簡易 HTML 標籤排版。</p>
                 </div>
 
                 <div className="flex justify-end gap-4 pt-4 border-t border-slate-100">
@@ -299,19 +297,27 @@ export default function CMSDashboard() {
                     <tr>
                       <th className="p-4 w-32">日期</th>
                       <th className="p-4">標題</th>
+                      {activeTab === 'events' && <th className="p-4 w-32">狀態</th>}
                       <th className="p-4 w-32 text-right">操作</th>
                     </tr>
                   </thead>
                   <tbody>
                     {isLoading ? (
-                      <tr><td colSpan={3} className="p-8 text-center text-slate-400">載入中...</td></tr>
+                      <tr><td colSpan={activeTab === 'events' ? 4 : 3} className="p-8 text-center text-slate-400">載入中...</td></tr>
                     ) : dataList.length === 0 ? (
-                      <tr><td colSpan={3} className="p-8 text-center text-slate-400">目前沒有資料</td></tr>
+                      <tr><td colSpan={activeTab === 'events' ? 4 : 3} className="p-8 text-center text-slate-400">目前沒有資料，點擊右上角新增。</td></tr>
                     ) : (
                       dataList.map(post => (
                         <tr key={post.id} className="border-b border-slate-100 hover:bg-slate-50">
                           <td className="p-4 whitespace-nowrap">{post.date}</td>
                           <td className="p-4 font-medium text-slate-900">{post.title}</td>
+                          {activeTab === 'events' && (
+                            <td className="p-4">
+                              <span className={`px-2 py-1 rounded text-xs font-bold ${post.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                                {post.status === 'upcoming' ? '即將舉辦' : '圓滿結束'}
+                              </span>
+                            </td>
+                          )}
                           <td className="p-4 text-right space-x-3">
                             <button onClick={() => { setCurrentPost(post); setIsEditing(true); }} className="text-blue-600 font-semibold">編輯</button>
                             <button onClick={() => handleDelete(post.id)} className="text-red-500 font-semibold">刪除</button>
@@ -324,7 +330,6 @@ export default function CMSDashboard() {
               </div>
             </div>
           )}
-
         </div>
       </main>
     </div>
