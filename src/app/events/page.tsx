@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -6,39 +9,24 @@ export const metadata = {
   description: '重溫昔日情誼，支持母校發展。掌握鄧鏡波學校鮑思高同學會最新活動與聚會資訊。',
 };
 
-// 若未來建立 Firestore 'events' 集合，可在此處加入 fetchEvents()
-const mockEvents = [
-  {
-    id: "evt-01",
-    title: "2026 校友會週年大會 (AGM)",
-    date: "2026年11月15日",
-    desc: "誠邀各位會員出席，共商會務發展及票選新一屆幹事。會後將備有茶點招待。",
-    status: "upcoming", // upcoming | past
-  },
-  {
-    id: "evt-02",
-    title: "鄧鏡波盃 舊生籃球邀請賽",
-    date: "2026年12月10日",
-    desc: "穿上波衫，重返修院球場！歡迎各屆校友組隊參加，與師兄弟切磋球技，重溫熱血青春。",
-    status: "upcoming",
-  },
-  {
-    id: "evt-03",
-    title: "鮑思高瞻禮感恩祭暨舊生晚宴",
-    date: "2027年1月31日",
-    desc: "紀念會祖聖若望·鮑思高，齊聚一堂感念恩師教導。晚宴將設有大抽獎及校友表演環節。",
-    status: "upcoming",
-  },
-  {
-    id: "evt-04",
-    title: "2025 校友會新春盆菜宴",
-    date: "2025年2月",
-    desc: "超過三百名校友及老師聚首母校操場，共享傳統盆菜，氣氛熱鬧，圓滿結束。",
-    status: "past",
-  }
-];
+export const revalidate = 60; // 啟用 ISR，每 60 秒快取更新
 
-export default function EventsPage() {
+// 從 Firestore 'events' 集合撈取活動資料
+async function fetchEvents() {
+  try {
+    const eventsRef = collection(db, 'events');
+    const q = query(eventsRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    return [];
+  }
+}
+
+export default async function EventsPage() {
+  const eventList = await fetchEvents();
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header />
@@ -57,48 +45,73 @@ export default function EventsPage() {
           
           {/* 活動列表網格 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mockEvents.map((event) => (
-              <div 
-                key={event.id} 
-                className="group flex flex-col bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
-              >
-                {/* 狀態標籤 (Upcoming / Past) */}
-                <div className="absolute top-0 right-0">
-                  <span className={`inline-block px-4 py-1 text-xs font-bold rounded-bl-lg ${
-                    event.status === 'upcoming' 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : 'bg-slate-100 text-slate-500'
-                  }`}>
-                    {event.status === 'upcoming' ? '即將舉辦' : '圓滿結束'}
-                  </span>
-                </div>
-
-                <div className="text-blue-600 font-bold tracking-wider mb-3 text-sm mt-2">
-                  {event.date}
-                </div>
-                
-                <h4 className="text-xl font-bold text-slate-800 mb-4 group-hover:text-blue-600 transition-colors">
-                  {event.title}
-                </h4>
-                
-                <p className="text-slate-600 text-sm leading-relaxed flex-grow">
-                  {event.desc}
-                </p>
-
-                {/* 底部行動呼籲按鈕 */}
-                <div className="mt-8 pt-4 border-t border-slate-100">
-                  {event.status === 'upcoming' ? (
-                    <button className="w-full py-2 bg-blue-50 text-blue-700 font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-colors">
-                      了解詳情 / 報名
-                    </button>
-                  ) : (
-                    <button className="w-full py-2 bg-slate-50 text-slate-500 font-bold rounded-lg hover:bg-slate-200 transition-colors">
-                      查看活動相簿
-                    </button>
-                  )}
-                </div>
+            {eventList.length === 0 ? (
+              <div className="col-span-full text-center text-slate-500 py-12">
+                目前尚無活動資料，請由後台 CMS 新增。
               </div>
-            ))}
+            ) : (
+              eventList.map((event) => (
+                <div 
+                  key={event.id} 
+                  className="group flex flex-col bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
+                >
+                  {/* 狀態標籤 (Upcoming / Past) */}
+                  <div className="absolute top-0 right-0">
+                    <span className={`inline-block px-4 py-1 text-xs font-bold rounded-bl-lg ${
+                      event.status === 'upcoming' 
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {event.status === 'upcoming' ? '即將舉辦' : '圓滿結束'}
+                    </span>
+                  </div>
+
+                  {/* 優先顯示活動舉辦時間 (eventDateTime)，若無則顯示發佈日期 (date) */}
+                  <div className="text-blue-600 font-bold tracking-wider mb-3 text-sm mt-2">
+                    {event.eventDateTime || event.date}
+                  </div>
+                  
+                  <h4 className="text-xl font-bold text-slate-800 mb-4 group-hover:text-blue-600 transition-colors">
+                    {event.title}
+                  </h4>
+                  
+                  {/* 內文限制 3 行，保持排版整齊 */}
+                  <p className="text-slate-600 text-sm leading-relaxed flex-grow line-clamp-3 whitespace-pre-wrap">
+                    {event.content}
+                  </p>
+
+                  {/* 底部行動呼籲按鈕 */}
+                  <div className="mt-8 pt-4 border-t border-slate-100">
+                    {event.status === 'upcoming' ? (
+                      event.registrationUrl ? (
+                        // 有外部報名連結，另開視窗
+                        <a 
+                          href={event.registrationUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="block text-center w-full py-2 bg-blue-50 text-blue-700 font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+                        >
+                          了解詳情 / 報名
+                        </a>
+                      ) : (
+                        // 無連結時的禁用狀態
+                        <button disabled className="w-full py-2 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed">
+                          報名即將開放
+                        </button>
+                      )
+                    ) : (
+                      // 歷史活動連至內頁詳情 (若未來建立 /events/[id]/page.tsx)
+                      <Link 
+                        href={`/events/${event.id}`} 
+                        className="block text-center w-full py-2 bg-slate-50 text-slate-500 font-bold rounded-lg hover:bg-slate-200 transition-colors"
+                      >
+                        查看活動詳情
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
         </div>
