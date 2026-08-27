@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc, updateDoc, writeBatch, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 
+// -------------------------
+// 介面定義 (Interfaces)
+// -------------------------
 interface ContentData {
   id: string;
   title: string;
@@ -22,27 +25,50 @@ interface ContentData {
   registrationUrl?: string;
 }
 
+interface RegistrationData {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  gradYear: string;
+  remarks: string;
+  createdAt: any;
+}
+
 export default function CMSDashboard() {
+  // -------------------------
+  // 狀態管理 (State)
+  // -------------------------
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<'news' | 'events'>('news');
   const [dataList, setDataList] = useState<ContentData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  
+  // 編輯器狀態
   const [isEditing, setIsEditing] = useState(false);
   const [currentPost, setCurrentPost] = useState<Partial<ContentData>>({});
-  
-  // 新增：Seeder 狀態
-  const [isSeeding, setIsSeeding] = useState(false);
-  
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Seeder 狀態
+  const [isSeeding, setIsSeeding] = useState(false);
 
+  // 報名名單 (Roster) 狀態
+  const [viewingRosterFor, setViewingRosterFor] = useState<string | null>(null);
+  const [rosterList, setRosterList] = useState<RegistrationData[]>([]);
+  const [rosterLoading, setRosterLoading] = useState(false);
+
+  // -------------------------
+  // 生命週期與通用功能
+  // -------------------------
   useEffect(() => {
     if (isAuthenticated) fetchData();
   }, [isAuthenticated, activeTab]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsAuthenticated(true); // TODO: 替換為 Firebase Auth signInWithEmailAndPassword
+    // ⚠️ 資安提醒：上線前請務必將此處替換為 Firebase Auth signInWithEmailAndPassword
+    setIsAuthenticated(true); 
   };
 
   const fetchData = async () => {
@@ -58,6 +84,29 @@ export default function CMSDashboard() {
     }
   };
 
+  // -------------------------
+  // 報名名單功能 (Roster)
+  // -------------------------
+  const fetchRoster = async (eventId: string) => {
+    setViewingRosterFor(eventId);
+    setRosterLoading(true);
+    try {
+      const q = query(collection(db, 'event_registrations'), where('eventId', '==', eventId));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as RegistrationData[];
+      // 前端做時間降序排序 (避免 Firebase index 建立要求)
+      data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); 
+      setRosterList(data);
+    } catch (error) {
+      console.error("Fetch roster error:", error);
+    } finally {
+      setRosterLoading(false);
+    }
+  };
+
+  // -------------------------
+  // 內容 CRUD 功能
+  // -------------------------
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -110,7 +159,9 @@ export default function CMSDashboard() {
     }
   };
 
-  // 內建 Seeder 腳本：清洗並導入活動資料
+  // -------------------------
+  // 內建 Seeder 腳本
+  // -------------------------
   const handleSeedEvents = async () => {
     const confirmMsg = "⚠️ 危險操作！\n\n這將會【清空】目前資料庫中所有的活動資料，並重新寫入 4 筆範例數據。\n請問確定要執行嗎？";
     if (!window.confirm(confirmMsg)) return;
@@ -121,64 +172,33 @@ export default function CMSDashboard() {
       const snapshot = await getDocs(eventsRef);
       const batch = writeBatch(db);
 
-      // 1. 清除舊資料
       snapshot.docs.forEach((document) => {
         batch.delete(document.ref);
       });
 
-      // 2. 準備範例資料
       const sampleEvents = [
         {
-          title: "2026 校友會週年大會 (AGM)",
-          date: "2026-10-01",
-          eventDateTime: "2026-11-15 14:00",
+          title: "2026 校友會週年大會 (AGM)", date: "2026-10-01", eventDateTime: "2026-11-15 14:00",
           content: "誠邀各位會員出席，共商會務發展及票選新一屆幹事。會後將備有茶點招待。\n\n流程：\n1. 會長致辭\n2. 財政報告\n3. 新一屆幹事選舉\n4. 自由交流與茶會",
-          imageUrl: "",
-          status: "upcoming",
-          contactInfo: "陳秘書 9123-4567",
-          notificationEmail: "admin@tkp-dbpp.org.hk",
-          registrationUrl: "https://forms.gle/example1",
-          createdAt: new Date(),
+          imageUrl: "", status: "upcoming", contactInfo: "陳秘書 9123-4567", notificationEmail: "admin@tkp-dbpp.org.hk", registrationUrl: "", createdAt: new Date()
         },
         {
-          title: "鄧鏡波盃 舊生籃球邀請賽",
-          date: "2026-10-15",
-          eventDateTime: "2026-12-10 09:00",
+          title: "鄧鏡波盃 舊生籃球邀請賽", date: "2026-10-15", eventDateTime: "2026-12-10 09:00",
           content: "穿上波衫，重返修院球場！歡迎各屆校友組隊參加，與師兄弟切磋球技，重溫熱血青春。\n\n報名費：每隊 $500\n名額：16 隊 (先到先得)",
-          imageUrl: "",
-          status: "upcoming",
-          contactInfo: "李副會長 9876-5432",
-          notificationEmail: "admin@tkp-dbpp.org.hk",
-          registrationUrl: "https://forms.gle/example2",
-          createdAt: new Date(),
+          imageUrl: "", status: "upcoming", contactInfo: "李副會長 9876-5432", notificationEmail: "admin@tkp-dbpp.org.hk", registrationUrl: "", createdAt: new Date()
         },
         {
-          title: "鮑思高瞻禮感恩祭暨舊生晚宴",
-          date: "2026-11-01",
-          eventDateTime: "2027-01-31 18:00",
+          title: "鮑思高瞻禮感恩祭暨舊生晚宴", date: "2026-11-01", eventDateTime: "2027-01-31 18:00",
           content: "紀念會祖聖若望·鮑思高，齊聚一堂感念恩師教導。晚宴將設有大抽獎及校友表演環節。\n\n地點：母校大禮堂\n餐券：每位 $300 (大小同價)",
-          imageUrl: "",
-          status: "upcoming",
-          contactInfo: "黃司庫 6123-8888",
-          notificationEmail: "",
-          registrationUrl: "",
-          createdAt: new Date(),
+          imageUrl: "", status: "upcoming", contactInfo: "黃司庫 6123-8888", notificationEmail: "", registrationUrl: "", createdAt: new Date()
         },
         {
-          title: "2025 校友會新春盆菜宴",
-          date: "2025-01-10",
-          eventDateTime: "2025-02-15 19:00",
+          title: "2025 校友會新春盆菜宴", date: "2025-01-10", eventDateTime: "2025-02-15 19:00",
           content: "超過三百名校友及老師聚首母校操場，共享傳統盆菜，氣氛熱鬧，圓滿結束。感謝各位校友的鼎力支持！\n\n當晚除了豐富的盆菜，還有師生才藝表演以及幸運大抽獎，讓大家在歡笑聲中度過了一個難忘的夜晚。",
-          imageUrl: "",
-          status: "past",
-          contactInfo: "",
-          notificationEmail: "",
-          registrationUrl: "",
-          createdAt: new Date(),
+          imageUrl: "", status: "past", contactInfo: "", notificationEmail: "", registrationUrl: "", createdAt: new Date()
         }
       ];
 
-      // 3. 寫入新資料
       sampleEvents.forEach((event) => {
         const newDocRef = doc(eventsRef);
         batch.set(newDocRef, event);
@@ -186,7 +206,7 @@ export default function CMSDashboard() {
 
       await batch.commit();
       alert("✅ 清洗與導入成功！");
-      fetchData(); // 重新拉取資料刷新列表
+      fetchData();
     } catch (error: any) {
       console.error(error);
       alert(`❌ 導入失敗：${error.message}`);
@@ -195,6 +215,9 @@ export default function CMSDashboard() {
     }
   };
 
+  // -------------------------
+  // 工具函數
+  // -------------------------
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -257,6 +280,9 @@ export default function CMSDashboard() {
     }, 0);
   };
 
+  // -------------------------
+  // 視圖 A: 登入
+  // -------------------------
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
@@ -281,6 +307,9 @@ export default function CMSDashboard() {
     );
   }
 
+  // -------------------------
+  // 視圖 B: CMS 儀表板
+  // -------------------------
   return (
     <div className="min-h-screen flex bg-slate-50">
       <aside className="w-64 bg-slate-900 text-white flex flex-col hidden md:flex fixed h-full z-10">
@@ -305,7 +334,6 @@ export default function CMSDashboard() {
               <h1 className="text-3xl font-extrabold text-slate-900">
                 {activeTab === 'news' ? '新聞動態管理' : '活動花絮與報名管理'}
               </h1>
-              {/* 開發測試專用：清洗資料按鈕 (僅在活動 Tab 顯示) */}
               {!isEditing && activeTab === 'events' && (
                 <button 
                   onClick={handleSeedEvents} 
@@ -389,7 +417,7 @@ export default function CMSDashboard() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">外部報名連結 (Google Forms 等)</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">外部報名連結 (選填，留空則啟用站內報名)</label>
                       <input type="url" value={currentPost.registrationUrl || ''} onChange={e => setCurrentPost({...currentPost, registrationUrl: e.target.value})} placeholder="https://forms.gle/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
                     </div>
                   </div>
@@ -424,7 +452,7 @@ export default function CMSDashboard() {
                       <th className="p-4 w-32">發佈日期</th>
                       <th className="p-4">標題</th>
                       {activeTab === 'events' && <th className="p-4 w-32">活動狀態</th>}
-                      <th className="p-4 w-32 text-right">操作</th>
+                      <th className="p-4 w-40 text-right">操作</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -445,6 +473,10 @@ export default function CMSDashboard() {
                             </td>
                           )}
                           <td className="p-4 text-right space-x-3">
+                            {/* 活動專屬的查看名單按鈕 */}
+                            {activeTab === 'events' && (
+                              <button onClick={() => fetchRoster(post.id)} className="text-emerald-600 font-semibold hover:underline mr-2">名單</button>
+                            )}
                             <button onClick={() => { setCurrentPost(post); setIsEditing(true); }} className="text-blue-600 font-semibold hover:underline">編輯</button>
                             <button onClick={() => handleDelete(post.id)} className="text-red-500 font-semibold hover:underline">刪除</button>
                           </td>
@@ -458,6 +490,49 @@ export default function CMSDashboard() {
           )}
         </div>
       </main>
+
+      {/* 報名名單 Modal (CMS端) */}
+      {viewingRosterFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+              <h3 className="text-xl font-bold text-slate-800">報名名單 (共 {rosterList.length} 人)</h3>
+              <button onClick={() => setViewingRosterFor(null)} className="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              {rosterLoading ? (
+                <p className="text-center text-slate-500 py-8">載入名單中...</p>
+              ) : rosterList.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">目前尚無人報名</p>
+              ) : (
+                <table className="w-full text-left text-sm text-slate-600">
+                  <thead className="bg-slate-100 text-slate-800">
+                    <tr>
+                      <th className="p-3 rounded-tl-lg">姓名</th>
+                      <th className="p-3">電話</th>
+                      <th className="p-3">Email</th>
+                      <th className="p-3">畢業年</th>
+                      <th className="p-3 rounded-tr-lg">備註</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rosterList.map(user => (
+                      <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="p-3 font-semibold text-slate-900">{user.name}</td>
+                        <td className="p-3">{user.phone}</td>
+                        <td className="p-3">{user.email}</td>
+                        <td className="p-3">{user.gradYear || '-'}</td>
+                        <td className="p-3">{user.remarks || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
