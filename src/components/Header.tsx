@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Header() {
   return (
@@ -7,8 +8,16 @@ export default function Header() {
         <div className="flex justify-between h-20 items-center">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-900 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-inner">
-                TKP
+              {/* 替換為高清 Logo */}
+              <div className="relative w-12 h-14 flex-shrink-0">
+                <Image 
+                  src="/logo.png" 
+                  alt="鄧鏡波學校 Logo" 
+                  fill
+                  className="object-contain"
+                  sizes="48px"
+                  priority // LCP 優化：確保 Header logo 優先載入
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-blue-900 tracking-tight">鄧鏡波學校</h1>
