@@ -1,9 +1,9 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
-import Image from 'next/image';
 import CardImage from '@/components/CardImage';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
-// 1. 初始化 Firebase Client SDK (唯讀模式，放明碼無安全風險)
 const firebaseConfig = {
   apiKey: "AIzaSyCVpNegHunQSUNWAg5slp5TReqstk6eX5Y",
   authDomain: "tkp-dbpp.firebaseapp.com",
@@ -12,87 +12,44 @@ const firebaseConfig = {
   messagingSenderId: "994817627378",
   appId: "1:994817627378:web:11c021cec20e884bce2c6b"
 };
-
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
+export const revalidate = 60;
 
-// 定義資料介面
-interface NewsPost {
-  id: string;
-  title: string;
-  content: string;
-  imageUrl: string | null;
-  isVideo: boolean;
-  facebookUrl: string;
-  date: string;
-}
-
-// 2. 獲取資料 (Next.js 會在 Server-side 執行並緩存)
-async function fetchNews(): Promise<NewsPost[]> {
+async function fetchNews() {
   const newsRef = collection(db, 'news');
   const q = query(newsRef, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  })) as NewsPost[];
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
 }
 
 export default async function NewsPage() {
   const newsList = await fetchNews();
 
   return (
-    <main className="min-h-screen bg-slate-50 py-16 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* 標題區塊 */}
-        <header className="mb-12 text-center">
-          <h1 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
-            校友會最新動態
-          </h1>
-          <div className="h-1 w-24 bg-blue-600 mx-auto rounded-full"></div>
-        </header>
-
-        {/* 卡片網格 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {newsList.map((post) => (
-            <a
-              key={post.id}
-              href={post.facebookUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              {/* 多媒體 / 防破圖攔截區塊 */}
-              <CardImage
-                imageUrl={post.imageUrl}
-                title={post.title}
-                isVideo={post.isVideo}
-              />
-
-              {/* 內文區塊 */}
-              <div className="p-5 flex flex-col flex-grow">
-                <time className="text-xs font-bold text-blue-600 mb-2 block tracking-wider">
-                  {post.date}
-                </time>
-                <h2 className="text-lg font-bold text-slate-800 mb-2 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
-                  {post.title}
-                </h2>
-                <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed flex-grow">
-                  {post.content}
-                </p>
-                
-                {/* 底部按鈕 */}
-                <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-xs font-semibold text-slate-400">
-                  <span className="group-hover:text-blue-600 transition-colors">閱讀全文 &rarr;</span>
-                  <span className="bg-slate-100 px-2 py-1 rounded text-slate-500">Facebook</span>
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <Header />
+      <main className="flex-grow py-16 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          <header className="mb-12 text-center">
+            <h1 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">校友會最新動態</h1>
+            <div className="h-1 w-24 bg-blue-600 mx-auto rounded-full"></div>
+          </header>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {newsList.map((post) => (
+              <a key={post.id} href={post.facebookUrl} target="_blank" rel="noopener noreferrer" className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <CardImage imageUrl={post.imageUrl} title={post.title} isVideo={post.isVideo} />
+                <div className="p-5 flex flex-col flex-grow">
+                  <time className="text-xs font-bold text-blue-600 mb-2 block tracking-wider">{post.date}</time>
+                  <h2 className="text-lg font-bold text-slate-800 mb-2 line-clamp-2">{post.title}</h2>
+                  <p className="text-sm text-slate-500 line-clamp-3">{post.content}</p>
                 </div>
-              </div>
-            </a>
-          ))}
+              </a>
+            ))}
+          </div>
         </div>
-        
-      </div>
-    </main>
+      </main>
+      <Footer />
+    </div>
   );
 }
