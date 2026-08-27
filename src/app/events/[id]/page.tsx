@@ -5,6 +5,9 @@ import { db } from '@/lib/firebase';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
+// 引入我們新建的站內報名表單組件
+import RegistrationModal from '@/components/RegistrationModal';
+
 export const revalidate = 60;
 
 // Next.js 15: params 是一個 Promise
@@ -69,18 +72,26 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           {event.content}
         </article>
 
-        {/* 報名按鈕區塊 (僅在有報名網址且尚未結束時顯示) */}
-        {event.status === 'upcoming' && event.registrationUrl && (
+        {/* 報名按鈕區塊 (智能判斷：外部連結 vs 站內系統) */}
+        {event.status === 'upcoming' && (
           <div className="mt-16 text-center border-t border-slate-200 pt-12">
             <h3 className="text-2xl font-bold text-slate-900 mb-4">歡迎校友踴躍參與</h3>
-            <a 
-              href={event.registrationUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="inline-block bg-blue-600 text-white font-bold text-lg rounded-full px-12 py-4 shadow-lg hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              前往報名表單 &rarr;
-            </a>
+            
+            {event.registrationUrl ? (
+              // 存在外部報名網址
+              <a 
+                href={event.registrationUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-block bg-slate-800 text-white font-bold text-lg rounded-full px-12 py-4 shadow-lg hover:bg-slate-900 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              >
+                前往外部報名表單 &rarr;
+              </a>
+            ) : (
+              // 留空則調用站內原生報名系統 (Client Component)
+              <RegistrationModal eventId={event.id} eventTitle={event.title} />
+            )}
+            
           </div>
         )}
       </main>
