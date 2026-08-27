@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import CardImage from '@/components/CardImage';
