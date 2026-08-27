@@ -37,7 +37,7 @@ export default async function NewsPage() {
             <div className="h-1 w-24 bg-blue-600 mx-auto rounded-full"></div>
           </header>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            // 在 src/app/news/page.tsx 內的 return 區塊中：
+            {/* 已移除導致錯誤的 JSX raw text 註解 */}
             {newsList.map((post) => (
               <Link key={post.id} href={`/news/${post.id}`} className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <CardImage imageUrl={post.imageUrl} title={post.title} isVideo={post.isVideo} />
@@ -48,7 +48,7 @@ export default async function NewsPage() {
                 </div>
               </Link>
             ))}
-                      </div>
+          </div>
         </div>
       </main>
       <Footer />
