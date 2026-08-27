@@ -36,17 +36,18 @@ export default async function NewsPage() {
             <div className="h-1 w-24 bg-blue-600 mx-auto rounded-full"></div>
           </header>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            // 在 src/app/news/page.tsx 內的 return 區塊中：
             {newsList.map((post) => (
-              <a key={post.id} href={post.facebookUrl} target="_blank" rel="noopener noreferrer" className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <Link key={post.id} href={`/news/${post.id}`} className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <CardImage imageUrl={post.imageUrl} title={post.title} isVideo={post.isVideo} />
                 <div className="p-5 flex flex-col flex-grow">
                   <time className="text-xs font-bold text-blue-600 mb-2 block tracking-wider">{post.date}</time>
                   <h2 className="text-lg font-bold text-slate-800 mb-2 line-clamp-2">{post.title}</h2>
                   <p className="text-sm text-slate-500 line-clamp-3">{post.content}</p>
                 </div>
-              </a>
+              </Link>
             ))}
-          </div>
+                      </div>
         </div>
       </main>
       <Footer />
