@@ -8,16 +8,8 @@ export default function Header() {
         <div className="flex justify-between h-20 items-center">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
-              {/* 替換為高清 Logo */}
               <div className="relative w-12 h-14 flex-shrink-0">
-                <Image 
-                  src="/logo.png" 
-                  alt="鄧鏡波學校 Logo" 
-                  fill
-                  className="object-contain"
-                  sizes="48px"
-                  priority // LCP 優化：確保 Header logo 優先載入
-                />
+                <Image src="/logo.png" alt="鄧鏡波學校 Logo" fill className="object-contain" sizes="48px" priority />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-blue-900 tracking-tight">鄧鏡波學校</h1>
@@ -28,9 +20,9 @@ export default function Header() {
           <div className="hidden md:flex space-x-8 items-center">
             <Link href="/" className="text-blue-900 font-medium hover:text-blue-600 transition-colors">首頁</Link>
             <Link href="/about" className="text-slate-600 font-medium hover:text-blue-600 transition-colors">關於我們</Link>
-            <Link href="/#events" className="text-slate-600 font-medium hover:text-blue-600 transition-colors">活動花絮</Link>
+            <Link href="/events" className="text-slate-600 font-medium hover:text-blue-600 transition-colors">活動花絮</Link>
             <Link href="/news" className="text-slate-600 font-medium hover:text-blue-600 transition-colors">最新動態</Link>
-            <Link href="/#membership" className="px-4 py-2 bg-blue-900 text-white rounded-md text-sm font-bold hover:bg-blue-800 transition-colors">加入會員</Link>
+            <Link href="/membership" className="px-4 py-2 bg-blue-900 text-white rounded-md text-sm font-bold hover:bg-blue-800 transition-colors">加入會員</Link>
           </div>
         </div>
       </div>
