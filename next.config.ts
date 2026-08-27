@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // 允許 Next.js <Image /> 組件載入並代理 Firebase Storage 圖片
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
