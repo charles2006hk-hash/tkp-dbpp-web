@@ -6,17 +6,23 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 
+// 統一的數據介面，包含新聞與活動的所有可能欄位
 interface ContentData {
   id: string;
   title: string;
   content: string;
   imageUrl: string;
-  youtubeUrl?: string; // 新聞專屬
-  tags?: string[];
-  status?: 'upcoming' | 'past'; // 活動專屬
-  registrationUrl?: string; // 活動專屬
-  date: string;
+  date: string; // 發佈日期
   createdAt?: any;
+  // 新聞專屬
+  youtubeUrl?: string;
+  tags?: string[];
+  // 活動專屬
+  status?: 'upcoming' | 'past';
+  eventDateTime?: string; // 實際舉辦時間
+  contactInfo?: string;   // 聯絡人/電話
+  notificationEmail?: string; // 接收報名通知的 Email
+  registrationUrl?: string; // 外部報名表單連結
 }
 
 export default function CMSDashboard() {
@@ -36,7 +42,7 @@ export default function CMSDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsAuthenticated(true); // TODO: 替換為 Firebase Auth
+    setIsAuthenticated(true); // TODO: 上線前務必接入 Firebase Auth signInWithEmailAndPassword
   };
 
   const fetchData = async () => {
@@ -56,7 +62,7 @@ export default function CMSDashboard() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // 根據不同模塊，組合不同的數據結構
+      // 共通欄位
       const baseData = {
         title: currentPost.title || '',
         date: currentPost.date || new Date().toISOString().split('T')[0],
@@ -65,9 +71,21 @@ export default function CMSDashboard() {
         createdAt: currentPost.createdAt || new Date(),
       };
 
+      // 根據當前 Tab 組合專屬欄位
       const postData = activeTab === 'news' 
-        ? { ...baseData, youtubeUrl: currentPost.youtubeUrl || '', tags: currentPost.tags || ['新聞'] }
-        : { ...baseData, status: currentPost.status || 'upcoming', registrationUrl: currentPost.registrationUrl || '' };
+        ? { 
+            ...baseData, 
+            youtubeUrl: currentPost.youtubeUrl || '', 
+            tags: currentPost.tags || ['校友會動態'] 
+          }
+        : { 
+            ...baseData, 
+            status: currentPost.status || 'upcoming', 
+            registrationUrl: currentPost.registrationUrl || '',
+            eventDateTime: currentPost.eventDateTime || '',
+            contactInfo: currentPost.contactInfo || '',
+            notificationEmail: currentPost.notificationEmail || ''
+          };
 
       if (currentPost.id) {
         await updateDoc(doc(db, activeTab, currentPost.id), postData);
@@ -78,7 +96,7 @@ export default function CMSDashboard() {
       fetchData();
     } catch (error) {
       console.error("Save error: ", error);
-      alert("儲存失敗，請檢查 Firestore 權限。");
+      alert("儲存失敗，請檢查 Firestore 安全規則。");
     } finally {
       setIsLoading(false);
     }
@@ -94,7 +112,7 @@ export default function CMSDashboard() {
     }
   };
 
-  // 圖片壓縮與上傳 (HTML5 Canvas)
+  // Canvas 圖片壓縮 (1024px, 70% Quality)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -143,6 +161,7 @@ export default function CMSDashboard() {
     };
   };
 
+  // 簡易 HTML 標籤插入
   const insertTextAtCursor = (textToInsert: string) => {
     const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
     if (!textarea) return;
@@ -157,7 +176,9 @@ export default function CMSDashboard() {
     }, 0);
   };
 
-  // 登入畫面
+  // -------------------------
+  // 視圖 A: 登入
+  // -------------------------
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
@@ -182,7 +203,9 @@ export default function CMSDashboard() {
     );
   }
 
-  // 主控台畫面
+  // -------------------------
+  // 視圖 B: CMS 儀表板
+  // -------------------------
   return (
     <div className="min-h-screen flex bg-slate-50">
       <aside className="w-64 bg-slate-900 text-white flex flex-col hidden md:flex fixed h-full z-10">
@@ -194,8 +217,8 @@ export default function CMSDashboard() {
           <button onClick={() => {setActiveTab('news'); setIsEditing(false);}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg ${activeTab === 'news' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
             <span className="font-semibold">新聞動態管理</span>
           </button>
-          <button onClick={() => {setActiveTab('events'); setIsEditing(false);}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg ${activeTab === 'events' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-            <span className="font-semibold">活動花絮管理</span>
+          <button onClick={() => {setActiveTab('events'); setIsEditing(false);}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg ${activeTab === 'events' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+            <span className="font-semibold">活動花絮與報名</span>
           </button>
         </nav>
       </aside>
@@ -204,10 +227,10 @@ export default function CMSDashboard() {
         <div className="max-w-6xl mx-auto">
           <header className="flex justify-between items-end mb-8">
             <h1 className="text-3xl font-extrabold text-slate-900">
-              {activeTab === 'news' ? '新聞動態管理' : '活動花絮管理'}
+              {activeTab === 'news' ? '新聞動態管理' : '活動花絮與報名管理'}
             </h1>
             {!isEditing && (
-              <button onClick={() => { setCurrentPost({}); setIsEditing(true); }} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-md">
+              <button onClick={() => { setCurrentPost({}); setIsEditing(true); }} className={`text-white px-6 py-2 rounded-lg font-bold shadow-md ${activeTab === 'news' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
                 + 新增內容
               </button>
             )}
@@ -226,7 +249,7 @@ export default function CMSDashboard() {
                     <input type="text" required value={currentPost.title || ''} onChange={e => setCurrentPost({...currentPost, title: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">{activeTab === 'events' ? '舉辦日期 (Date) *' : '發佈日期 (Date) *'}</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">建立/發佈日期 *</label>
                     <input type="date" required value={currentPost.date || ''} onChange={e => setCurrentPost({...currentPost, date: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
@@ -247,24 +270,41 @@ export default function CMSDashboard() {
                   )}
                 </div>
 
-                {/* 動態表單：根據 Tab 顯示不同欄位 */}
+                {/* 根據模組切換專屬表單區塊 */}
                 {activeTab === 'news' ? (
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">YouTube 影片 URL (選填)</label>
                     <input type="url" value={currentPost.youtubeUrl || ''} onChange={e => setCurrentPost({...currentPost, youtubeUrl: e.target.value})} placeholder="https://www.youtube.com/embed/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">活動狀態</label>
-                      <select value={currentPost.status || 'upcoming'} onChange={e => setCurrentPost({...currentPost, status: e.target.value as 'upcoming' | 'past'})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="upcoming">即將舉辦</option>
-                        <option value="past">圓滿結束</option>
-                      </select>
+                  <div className="bg-emerald-50 p-6 rounded-lg border border-emerald-100 space-y-4">
+                    <h3 className="font-bold text-emerald-800 mb-2">活動專屬設定</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">活動狀態</label>
+                        <select value={currentPost.status || 'upcoming'} onChange={e => setCurrentPost({...currentPost, status: e.target.value as 'upcoming' | 'past'})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+                          <option value="upcoming">即將舉辦 (開放報名)</option>
+                          <option value="past">圓滿結束 (歷史回顧)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">活動舉辦時間 (例如: 2026-11-15 18:00)</label>
+                        <input type="text" value={currentPost.eventDateTime || ''} onChange={e => setCurrentPost({...currentPost, eventDateTime: e.target.value})} placeholder="輸入活動時間" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">聯絡人資訊 (選填)</label>
+                        <input type="text" value={currentPost.contactInfo || ''} onChange={e => setCurrentPost({...currentPost, contactInfo: e.target.value})} placeholder="例如: 陳先生 91234567" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">報名通知 Email (選填)</label>
+                        <input type="email" value={currentPost.notificationEmail || ''} onChange={e => setCurrentPost({...currentPost, notificationEmail: e.target.value})} placeholder="admin@tkp-dbpp.org.hk" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">報名連結 (選填)</label>
-                      <input type="url" value={currentPost.registrationUrl || ''} onChange={e => setCurrentPost({...currentPost, registrationUrl: e.target.value})} placeholder="https://forms.gle/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">外部報名連結 (Google Forms 等)</label>
+                      <input type="url" value={currentPost.registrationUrl || ''} onChange={e => setCurrentPost({...currentPost, registrationUrl: e.target.value})} placeholder="https://forms.gle/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
                     </div>
                   </div>
                 )}
@@ -283,7 +323,7 @@ export default function CMSDashboard() {
 
                 <div className="flex justify-end gap-4 pt-4 border-t border-slate-100">
                   <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-lg">取消</button>
-                  <button type="submit" disabled={isLoading || isUploading} className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  <button type="submit" disabled={isLoading || isUploading} className={`px-8 py-2.5 text-white font-bold rounded-lg disabled:opacity-50 ${activeTab === 'news' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
                     {isLoading ? '儲存中...' : '儲存發佈'}
                   </button>
                 </div>
@@ -295,9 +335,9 @@ export default function CMSDashboard() {
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="bg-slate-50 text-slate-800 font-semibold border-b border-slate-200">
                     <tr>
-                      <th className="p-4 w-32">日期</th>
+                      <th className="p-4 w-32">發佈日期</th>
                       <th className="p-4">標題</th>
-                      {activeTab === 'events' && <th className="p-4 w-32">狀態</th>}
+                      {activeTab === 'events' && <th className="p-4 w-32">活動狀態</th>}
                       <th className="p-4 w-32 text-right">操作</th>
                     </tr>
                   </thead>
@@ -313,14 +353,14 @@ export default function CMSDashboard() {
                           <td className="p-4 font-medium text-slate-900">{post.title}</td>
                           {activeTab === 'events' && (
                             <td className="p-4">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${post.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                              <span className={`px-2 py-1 rounded text-xs font-bold ${post.status === 'upcoming' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                 {post.status === 'upcoming' ? '即將舉辦' : '圓滿結束'}
                               </span>
                             </td>
                           )}
                           <td className="p-4 text-right space-x-3">
-                            <button onClick={() => { setCurrentPost(post); setIsEditing(true); }} className="text-blue-600 font-semibold">編輯</button>
-                            <button onClick={() => handleDelete(post.id)} className="text-red-500 font-semibold">刪除</button>
+                            <button onClick={() => { setCurrentPost(post); setIsEditing(true); }} className="text-blue-600 font-semibold hover:underline">編輯</button>
+                            <button onClick={() => handleDelete(post.id)} className="text-red-500 font-semibold hover:underline">刪除</button>
                           </td>
                         </tr>
                       ))
