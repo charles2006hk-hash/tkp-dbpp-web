@@ -95,9 +95,14 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
       {/* 年度活動模組 */}
       <section id="events" className="py-16 md:py-24 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 md:mb-16">
-            <h3 className="text-2xl md:text-3xl font-extrabold mb-3 md:mb-4">近期活動與聚會</h3>
-            <p className="text-sm md:text-base text-slate-400">重溫昔日情誼，支持母校發展</p>
+          <div className="flex flex-col md:flex-row justify-between items-end mb-10 md:mb-16 gap-4">
+            <div className="text-left">
+              <h3 className="text-2xl md:text-3xl font-extrabold mb-3 md:mb-4">近期活動與聚會</h3>
+              <p className="text-sm md:text-base text-slate-400">重溫昔日情誼，支持母校發展</p>
+            </div>
+            <Link href="/events" className="hidden sm:inline-flex items-center text-blue-400 font-semibold hover:text-blue-300 transition-colors">
+              查看全部活動 &rarr;
+            </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {[
@@ -105,12 +110,22 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
               { title: "鄧鏡波盃 舊生籃球邀請賽", date: "2026年12月", desc: "穿上波衫，重返修院球場，與師兄弟切磋球技。" },
               { title: "鮑思高瞻禮感恩祭暨舊生晚宴", date: "2027年1月", desc: "紀念會祖聖若望·鮑思高，齊聚一堂感念恩師教導。" },
             ].map((event, idx) => (
-              <div key={idx} className="bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-700 hover:border-blue-500 transition-colors">
+              <Link 
+                href="/events" 
+                key={idx} 
+                className="group block bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-700 hover:border-blue-500 hover:bg-slate-800/80 transition-all cursor-pointer"
+              >
                 <div className="text-blue-400 font-bold tracking-wider mb-2 text-sm">{event.date}</div>
-                <h4 className="text-lg md:text-xl font-bold mb-3">{event.title}</h4>
+                <h4 className="text-lg md:text-xl font-bold mb-3 group-hover:text-blue-300 transition-colors">{event.title}</h4>
                 <p className="text-slate-400 text-xs md:text-sm leading-relaxed mb-4 md:mb-6">{event.desc}</p>
-              </div>
+              </Link>
             ))}
+          </div>
+          {/* 手機版查看全部按鈕 */}
+          <div className="mt-8 text-center sm:hidden">
+            <Link href="/events" className="inline-block px-6 py-3 border border-slate-700 text-white font-bold rounded-lg w-full hover:bg-slate-800">
+              查看全部活動
+            </Link>
           </div>
         </div>
       </section>
