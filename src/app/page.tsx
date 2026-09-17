@@ -1,14 +1,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase'; // 引入集中管理的 db 實例
+import { db } from '@/lib/firebase';
 import CardImage from '@/components/CardImage';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-export const revalidate = 60; // ISR：每 60 秒更新一次首頁快取
+export const revalidate = 60;
 
-// 獲取最新 3 筆新聞
 async function fetchLatestNews() {
   const newsRef = collection(db, 'news');
   const q = query(newsRef, orderBy('createdAt', 'desc'), limit(3));
@@ -34,44 +33,44 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-800">
       <Header />
       
-      {/* 主視覺區 */}
-      <section className="relative bg-blue-900 py-32 overflow-hidden">
+      {/* 主視覺區：縮小手機版 padding 與字體 */}
+      <section className="relative bg-blue-900 py-16 md:py-32 overflow-hidden">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-blue-900 to-blue-900"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight drop-shadow-md">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold text-white mb-4 md:mb-6 tracking-tight drop-shadow-md leading-tight">
             立己立人 <br className="hidden md:block" /><span className="text-blue-300">We Love, We Care</span>
           </h2>
-          <p className="mt-4 text-xl text-blue-100 max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="mt-4 text-base md:text-xl text-blue-100 max-w-2xl mx-auto font-light leading-relaxed px-2">
             傳承鮑思高精神，凝聚舊生力量。歡迎回到鄧鏡波學校鮑思高同學會的大家庭，與昔日同窗攜手共創未來。
           </p>
-          <div className="mt-10 flex justify-center gap-4">
-            <Link href="/news" className="px-8 py-3 bg-white text-blue-900 font-bold rounded-full hover:bg-blue-50 transition-all shadow-lg hover:-translate-y-0.5">
+          <div className="mt-8 md:mt-10 flex justify-center gap-4">
+            <Link href="/news" className="px-6 py-3 md:px-8 md:py-3 bg-white text-blue-900 font-bold rounded-full hover:bg-blue-50 transition-all shadow-lg hover:-translate-y-0.5 text-sm md:text-base">
               瀏覽最新動態
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 關於母校與鮑思高精神 */}
-      <section id="about" className="py-24 bg-white">
+      {/* 關於母校與鮑思高精神：調整網格間距 */}
+      <section id="about" className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
             <div>
-              <h3 className="text-3xl font-extrabold text-blue-900 mb-6 relative inline-block">
+              <h3 className="text-2xl md:text-3xl font-extrabold text-blue-900 mb-6 relative inline-block">
                 母校與鮑思高精神
                 <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-blue-500 rounded-full"></span>
               </h3>
-              <p className="text-lg text-slate-600 leading-relaxed mb-6">
+              <p className="text-base md:text-lg text-slate-600 leading-relaxed mb-6">
                 「教育是一件內心的事情。」 作為慈幼會創辦人聖若望·鮑思高（St. John Bosco）畢生致力於青少年的教育與關懷。他提倡的「預防教育法」——以理智、宗教、仁愛為核心，深深影響了鄧鏡波學校的辦學理念。
               </p>
-              <p className="text-lg text-slate-600 leading-relaxed mb-8">
+              <p className="text-base md:text-lg text-slate-600 leading-relaxed mb-8">
                 本會冠以「鮑思高」之名，旨在提醒所有畢業校友，無論身處社會何方，皆應秉持母校教誨，關愛弱勢，熱心服務。
               </p>
             </div>
             
-            <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h4 className="text-2xl font-bold text-slate-800 mb-4">本屆幹事會 (Committee)</h4>
-              <ul className="space-y-3 text-slate-700">
+            <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
+              <h4 className="text-xl md:text-2xl font-bold text-slate-800 mb-4">本屆幹事會 (Committee)</h4>
+              <ul className="space-y-3 text-sm md:text-base text-slate-700">
                 <li className="flex justify-between border-b border-slate-200 pb-2">
                   <span className="font-semibold">會長</span><span>李小明</span>
                 </li>
@@ -94,22 +93,22 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
       </section>
 
       {/* 年度活動模組 */}
-      <section id="events" className="py-24 bg-slate-900 text-white">
+      <section id="events" className="py-16 md:py-24 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="text-3xl font-extrabold mb-4">近期活動與聚會</h3>
-            <p className="text-slate-400">重溫昔日情誼，支持母校發展</p>
+          <div className="text-center mb-10 md:mb-16">
+            <h3 className="text-2xl md:text-3xl font-extrabold mb-3 md:mb-4">近期活動與聚會</h3>
+            <p className="text-sm md:text-base text-slate-400">重溫昔日情誼，支持母校發展</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {[
               { title: "2026 校友會週年大會 (AGM)", date: "2026年11月", desc: "誠邀各位會員出席，共商會務發展及票選新一屆幹事。" },
               { title: "鄧鏡波盃 舊生籃球邀請賽", date: "2026年12月", desc: "穿上波衫，重返修院球場，與師兄弟切磋球技。" },
               { title: "鮑思高瞻禮感恩祭暨舊生晚宴", date: "2027年1月", desc: "紀念會祖聖若望·鮑思高，齊聚一堂感念恩師教導。" },
             ].map((event, idx) => (
-              <div key={idx} className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-blue-500 transition-colors">
-                <div className="text-blue-400 font-bold tracking-wider mb-2">{event.date}</div>
-                <h4 className="text-xl font-bold mb-3">{event.title}</h4>
-                <p className="text-slate-400 text-sm leading-relaxed mb-6">{event.desc}</p>
+              <div key={idx} className="bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-700 hover:border-blue-500 transition-colors">
+                <div className="text-blue-400 font-bold tracking-wider mb-2 text-sm">{event.date}</div>
+                <h4 className="text-lg md:text-xl font-bold mb-3">{event.title}</h4>
+                <p className="text-slate-400 text-xs md:text-sm leading-relaxed mb-4 md:mb-6">{event.desc}</p>
               </div>
             ))}
           </div>
@@ -117,33 +116,39 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
       </section>
 
       {/* 最新動態預覽 */}
-      <section className="py-24 bg-slate-50 border-b border-slate-200">
+      <section className="py-16 md:py-24 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-end mb-12">
-            <h3 className="text-3xl font-extrabold text-blue-900">校友會動態</h3>
+          <div className="flex justify-between items-end mb-8 md:mb-12">
+            <h3 className="text-2xl md:text-3xl font-extrabold text-blue-900">校友會動態</h3>
             <Link href="/news" className="hidden sm:inline-flex items-center text-blue-600 font-semibold hover:text-blue-800 transition-colors">
               查看全部新聞 &rarr;
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {latestNews.map((post) => (
               <Link key={post.id} href={`/news/${post.id}`} className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <CardImage imageUrl={post.imageUrl} title={post.title} isVideo={post.isVideo} />
-                <div className="p-6 flex flex-col flex-grow">
+                <div className="p-5 md:p-6 flex flex-col flex-grow">
                   <time className="text-xs font-bold text-blue-600 mb-2 block tracking-wider">{post.date}</time>
-                  <h4 className="text-lg font-bold text-slate-800 mb-3 line-clamp-2 leading-snug group-hover:text-blue-600">{post.title}</h4>
+                  <h4 className="text-base md:text-lg font-bold text-slate-800 mb-3 line-clamp-2 leading-snug group-hover:text-blue-600">{post.title}</h4>
                 </div>
               </Link>
             ))}
+          </div>
+          {/* 手機版查看更多按鈕 */}
+          <div className="mt-8 text-center sm:hidden">
+            <Link href="/news" className="inline-block px-6 py-3 bg-blue-100 text-blue-700 font-bold rounded-lg w-full">
+              查看全部新聞
+            </Link>
           </div>
         </div>
       </section>
 
       {/* 招募與加入模組 */}
-      <section id="membership" className="py-20 bg-blue-600 text-center">
+      <section id="membership" className="py-16 md:py-20 bg-blue-600 text-center">
         <div className="max-w-4xl mx-auto px-4">
-          <h3 className="text-3xl font-extrabold text-white mb-6">歡迎加入鄧鏡波學校鮑思高同學會</h3>
-          <a href="/membership" className="inline-block px-8 py-4 bg-white text-blue-900 font-bold rounded-full hover:bg-blue-50 shadow-lg">了解更多</a>
+          <h3 className="text-2xl md:text-3xl font-extrabold text-white mb-6">歡迎加入鄧鏡波學校鮑思高同學會</h3>
+          <a href="/membership" className="inline-block px-6 md:px-8 py-3 md:py-4 bg-white text-blue-900 font-bold rounded-full hover:bg-blue-50 shadow-lg text-sm md:text-base">了解更多</a>
         </div>
       </section>
 
