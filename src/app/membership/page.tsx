@@ -8,7 +8,10 @@ import Footer from '@/components/Footer';
 import Image from 'next/image';
 
 export default function MembershipPage() {
-  const [formData, setFormData] = useState({ name: '', phone: '', email: '', gradYear: '', address: '' });
+  // 🌟 新增 studentClass (班別) 與 studentId (學號)
+  const [formData, setFormData] = useState({ 
+    name: '', phone: '', email: '', gradYear: '', studentClass: '', studentId: '', address: '' 
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -18,7 +21,7 @@ export default function MembershipPage() {
     try {
       await addDoc(collection(db, 'membership_applications'), {
         ...formData,
-        status: 'pending', // 預設狀態為待審批
+        status: 'pending', 
         createdAt: new Date()
       });
       setIsSuccess(true);
@@ -52,26 +55,36 @@ export default function MembershipPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">中/英文姓名 *</label>
-                  <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500" />
+                  <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">聯絡電話 *</label>
-                  <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500" />
+                  <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
-                  <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500" />
-                </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">畢業年份 *</label>
-                  <input type="text" required placeholder="例: 2006" value={formData.gradYear} onChange={e => setFormData({...formData, gradYear: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500" />
+                  <input type="text" required placeholder="例: 2006" value={formData.gradYear} onChange={e => setFormData({...formData, gradYear: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">班別 (選填)</label>
+                  <input type="text" placeholder="例: 5A" value={formData.studentClass} onChange={e => setFormData({...formData, studentClass: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">學號 (選填)</label>
+                  <input type="text" placeholder="例: 12" value={formData.studentId} onChange={e => setFormData({...formData, studentId: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
+                <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">通訊地址 (選填)</label>
-                <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div className="pt-6">
                 <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-blue-600 text-white font-bold text-lg rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md">
