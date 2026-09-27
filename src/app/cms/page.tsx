@@ -43,7 +43,7 @@ export default function CMSDashboard() {
   // -------------------------
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('news');
-  const [dataList, setDataList] = useState<any[]>([]); // 改為 any[] 以兼容會員列表
+  const [dataList, setDataList] = useState<any[]>([]); 
   const [isLoading, setIsLoading] = useState(false);
   
   // 編輯器狀態
@@ -76,6 +76,8 @@ export default function CMSDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    // ⚠️ 資安提醒：上線前請務必將此處替換為 Firebase Auth signInWithEmailAndPassword 
+    // 避免後台被未經授權的人員存取
     setIsAuthenticated(true); 
   };
 
@@ -93,7 +95,7 @@ export default function CMSDashboard() {
     }
   };
 
-  // 讀取「關於我們」單頁內容
+  // 🌟 讀取「關於我們」單頁內容 (整合預設文案)
   const fetchAboutPage = async () => {
     setIsLoading(true);
     try {
@@ -101,7 +103,14 @@ export default function CMSDashboard() {
       if (docSnap.exists()) {
         setCurrentPost({ id: 'about', ...docSnap.data() });
       } else {
-        setCurrentPost({ id: 'about', title: '關於我們', content: '' });
+        // 如果資料庫中還沒有「關於我們」，自動填入首頁的預設文案與幹事會名單
+        const defaultAboutContent = `<h3>母校與鮑思高精神</h3>\n<p>「教育是一件內心的事情。」 作為慈幼會創辦人聖若望·鮑思高（St. John Bosco）畢生致力於青少年的教育與關懷。他提倡的「預防教育法」——以理智、宗教、仁愛為核心，深深影響了鄧鏡波學校的辦學理念。</p>\n<br/>\n<p>本會冠以「鮑思高」之名，旨在提醒所有畢業校友，無論身處社會何方，皆應秉持母校教誨，關愛弱勢，熱心服務。</p>\n<hr className="my-6"/>\n<h3>本屆幹事會 (Committee)</h3>\n<b>會長</b>：李小明<br/>\n<b>副會長</b>：張大志<br/>\n<b>秘書長</b>：陳建國<br/>\n<b>司庫</b>：黃家輝`;
+        
+        setCurrentPost({ 
+          id: 'about', 
+          title: '鄧鏡波學校鮑思高同學會', 
+          content: defaultAboutContent 
+        });
       }
       setIsEditing(true); // 單頁模式強制進入編輯狀態
     } catch (error) {
@@ -528,7 +537,7 @@ export default function CMSDashboard() {
                 <div>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 gap-2">
                     <label className="block text-sm font-semibold text-slate-700">詳細內容 (支援 HTML) *</label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <button type="button" onClick={() => insertHTML('<h3>', '</h3>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300 font-bold">H3標題</button>
                       <button type="button" onClick={() => insertHTML('<b>', '</b>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300 font-bold">B粗體</button>
                       <button type="button" onClick={() => insertHTML('\n<br/>\n', '')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">換行</button>
