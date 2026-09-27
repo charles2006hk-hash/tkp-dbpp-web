@@ -95,21 +95,33 @@ export default function CMSDashboard() {
     }
   };
 
-  // 🌟 讀取「關於我們」單頁內容 (整合預設文案)
+  // 🌟 讀取「關於我們」單頁內容 (結構化資料)
   const fetchAboutPage = async () => {
     setIsLoading(true);
     try {
       const docSnap = await getDoc(doc(db, 'pages', 'about'));
       if (docSnap.exists()) {
-        setCurrentPost({ id: 'about', ...docSnap.data() });
+        const data = docSnap.data();
+        setCurrentPost({
+          id: 'about',
+          title: data.title || '鄧鏡波學校鮑思高同學會',
+          intro: data.intro || '「教育是一件內心的事情。」 作為慈幼會創辦人聖若望·鮑思高（St. John Bosco）畢生致力於青少年的教育與關懷。\n\n本會冠以「鮑思高」之名，旨在提醒所有畢業校友，無論身處社會何方，皆應秉持母校教誨，關愛弱勢，熱心服務。',
+          committee: data.committee && data.committee.length > 0 ? data.committee : [
+            { role: '會長', name: '李小明' },
+            { role: '副會長', name: '張大志' },
+            { role: '秘書長', name: '陳建國' },
+            { role: '司庫', name: '黃家輝' }
+          ]
+        });
       } else {
-        // 如果資料庫中還沒有「關於我們」，自動填入首頁的預設文案與幹事會名單
-        const defaultAboutContent = `<h3>母校與鮑思高精神</h3>\n<p>「教育是一件內心的事情。」 作為慈幼會創辦人聖若望·鮑思高（St. John Bosco）畢生致力於青少年的教育與關懷。他提倡的「預防教育法」——以理智、宗教、仁愛為核心，深深影響了鄧鏡波學校的辦學理念。</p>\n<br/>\n<p>本會冠以「鮑思高」之名，旨在提醒所有畢業校友，無論身處社會何方，皆應秉持母校教誨，關愛弱勢，熱心服務。</p>\n<hr className="my-6"/>\n<h3>本屆幹事會 (Committee)</h3>\n<b>會長</b>：李小明<br/>\n<b>副會長</b>：張大志<br/>\n<b>秘書長</b>：陳建國<br/>\n<b>司庫</b>：黃家輝`;
-        
-        setCurrentPost({ 
-          id: 'about', 
-          title: '鄧鏡波學校鮑思高同學會', 
-          content: defaultAboutContent 
+        setCurrentPost({
+          id: 'about',
+          title: '鄧鏡波學校鮑思高同學會',
+          intro: '「教育是一件內心的事情。」 作為慈幼會創辦人聖若望·鮑思高（St. John Bosco）畢生致力於青少年的教育與關懷。\n\n本會冠以「鮑思高」之名，旨在提醒所有畢業校友，無論身處社會何方，皆應秉持母校教誨，關愛弱勢，熱心服務。',
+          committee: [
+            { role: '會長', name: '李小明' }, { role: '副會長', name: '張大志' },
+            { role: '秘書長', name: '陳建國' }, { role: '司庫', name: '黃家輝' }
+          ]
         });
       }
       setIsEditing(true); // 單頁模式強制進入編輯狀態
@@ -171,10 +183,11 @@ export default function CMSDashboard() {
     setIsLoading(true);
     try {
       if (activeTab === 'about') {
-        // 儲存單頁內容
+        // 🌟 儲存結構化的關於我們資料
         await setDoc(doc(db, 'pages', 'about'), {
           title: currentPost.title || '關於我們',
-          content: currentPost.content || '',
+          intro: currentPost.intro || '',
+          committee: currentPost.committee || [],
           updatedAt: new Date()
         });
         alert('關於我們已成功更新！');
@@ -217,6 +230,21 @@ export default function CMSDashboard() {
     } catch (error) {
       console.error("Delete error: ", error);
     }
+  };
+
+  // 🌟 幹事會陣列操作函數 (用於動態新增/修改/刪除成員)
+  const handleCommitteeChange = (index: number, field: 'role' | 'name', value: string) => {
+    const newCommittee = [...(currentPost.committee || [])];
+    newCommittee[index][field] = value;
+    setCurrentPost({ ...currentPost, committee: newCommittee });
+  };
+  const addCommitteeMember = () => {
+    setCurrentPost({ ...currentPost, committee: [...(currentPost.committee || []), { role: '', name: '' }] });
+  };
+  const removeCommitteeMember = (index: number) => {
+    const newCommittee = [...(currentPost.committee || [])];
+    newCommittee.splice(index, 1);
+    setCurrentPost({ ...currentPost, committee: newCommittee });
   };
 
   // -------------------------
@@ -465,13 +493,53 @@ export default function CMSDashboard() {
               
               <form onSubmit={handleSave} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">標題 (Title) *</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">{activeTab === 'about' ? '網頁大標題' : '標題 (Title) *'}</label>
                   <input type="text" required value={currentPost.title || ''} onChange={e => setCurrentPost({...currentPost, title: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
 
-                {/* 關於我們不需要這些屬性 */}
-                {activeTab !== 'about' && (
+                {/* 🌟 關於我們專屬：雙區塊結構化資料表單 */}
+                {activeTab === 'about' ? (
+                  <div className="space-y-8 border-t border-slate-100 pt-6">
+                    <div>
+                      <label className="block text-base font-bold text-slate-800 mb-2">1. 介紹文字 (純文字)</label>
+                      <p className="text-xs text-slate-500 mb-2">無需輸入 HTML 代碼，直接在此輸入文字，換行會自動反映在網頁上。</p>
+                      <textarea 
+                        required rows={6} 
+                        value={currentPost.intro || ''} 
+                        onChange={e => setCurrentPost({...currentPost, intro: e.target.value})} 
+                        className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 text-sm leading-relaxed outline-none" 
+                        placeholder="請輸入關於我們的介紹..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-base font-bold text-slate-800 mb-2">2. 幹事會名單 (Committee)</label>
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        {(currentPost.committee || []).map((member: any, index: number) => (
+                          <div key={index} className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 border border-slate-200 rounded-lg shadow-sm">
+                            <input 
+                              type="text" placeholder="職位 (例: 會長)" required 
+                              value={member.role} onChange={e => handleCommitteeChange(index, 'role', e.target.value)} 
+                              className="w-full sm:w-1/3 border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" 
+                            />
+                            <input 
+                              type="text" placeholder="姓名 (例: 李小明)" required 
+                              value={member.name} onChange={e => handleCommitteeChange(index, 'name', e.target.value)} 
+                              className="w-full sm:flex-grow border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" 
+                            />
+                            <button type="button" onClick={() => removeCommitteeMember(index)} className="w-full sm:w-auto px-3 py-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-md text-sm font-bold">
+                              刪除
+                            </button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={addCommitteeMember} className="mt-3 w-full py-2 border-2 border-dashed border-slate-300 text-slate-600 font-bold rounded-lg hover:border-purple-500 hover:text-purple-600 transition-colors">
+                          + 新增幹事會成員
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
                   <>
+                    {/* 一般文章/活動表單 (完整保留) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">建立/發佈日期 *</label>
@@ -531,23 +599,22 @@ export default function CMSDashboard() {
                         </div>
                       </div>
                     )}
+
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 gap-2">
+                        <label className="block text-sm font-semibold text-slate-700">詳細內容 (支援 HTML) *</label>
+                        <div className="flex gap-2 flex-wrap">
+                          <button type="button" onClick={() => insertHTML('<h3>', '</h3>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300 font-bold">H3標題</button>
+                          <button type="button" onClick={() => insertHTML('<b>', '</b>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300 font-bold">B粗體</button>
+                          <button type="button" onClick={() => insertHTML('\n<br/>\n', '')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">換行</button>
+                          <button type="button" onClick={() => insertHTML('\n<hr className="my-6"/>\n', '')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">分隔線</button>
+                          <button type="button" onClick={() => insertHTML('<a href="網址" target="_blank" class="text-blue-600 underline">', '</a>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">連結</button>
+                        </div>
+                      </div>
+                      <textarea id="content-editor" required rows={10} value={currentPost.content || ''} onChange={e => setCurrentPost({...currentPost, content: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none whitespace-pre-wrap font-mono text-sm leading-relaxed" placeholder="在此輸入內容..."></textarea>
+                    </div>
                   </>
                 )}
-
-                <div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 gap-2">
-                    <label className="block text-sm font-semibold text-slate-700">詳細內容 (支援 HTML) *</label>
-                    <div className="flex gap-2 flex-wrap">
-                      <button type="button" onClick={() => insertHTML('<h3>', '</h3>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300 font-bold">H3標題</button>
-                      <button type="button" onClick={() => insertHTML('<b>', '</b>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300 font-bold">B粗體</button>
-                      <button type="button" onClick={() => insertHTML('\n<br/>\n', '')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">換行</button>
-                      <button type="button" onClick={() => insertHTML('\n<hr className="my-6"/>\n', '')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">分隔線</button>
-                      <button type="button" onClick={() => insertHTML('<a href="網址" target="_blank" class="text-blue-600 underline">', '</a>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">連結</button>
-                    </div>
-                  </div>
-                  <textarea id="content-editor" required rows={activeTab === 'about' ? 20 : 10} value={currentPost.content || ''} onChange={e => setCurrentPost({...currentPost, content: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none whitespace-pre-wrap font-mono text-sm leading-relaxed" placeholder="在此輸入內容..."></textarea>
-                  {activeTab === 'about' && <p className="text-xs text-slate-500 mt-2">提示：關於我們頁面文字較多，建議使用 H3標題 區分段落，並適當加入換行與分隔線。</p>}
-                </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                   {/* 單頁模式沒有取消按鈕，因為只有一頁可以改 */}
