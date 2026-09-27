@@ -56,8 +56,9 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
             <div>
-              <h3 className="text-2xl md:text-3xl font-extrabold text-blue-900 mb-6 relative inline-block">
-                母校與鮑思高精神
+              <h3 className="text-2xl md:text-3xl font-extrabold text-blue-900 mb-6 relative inline-flex items-center gap-3">
+                <Image src="/logo.png" alt="Logo" width={36} height={36} className="object-contain" />
+                <span>母校與鮑思高精神</span>
                 <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-blue-500 rounded-full"></span>
               </h3>
               <p className="text-base md:text-lg text-slate-600 leading-relaxed mb-6">
@@ -97,8 +98,11 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-end mb-10 md:mb-16 gap-4">
             <div className="text-left">
-              <h3 className="text-2xl md:text-3xl font-extrabold mb-3 md:mb-4">近期活動與聚會</h3>
-              <p className="text-sm md:text-base text-slate-400">重溫昔日情誼，支持母校發展</p>
+              <div className="flex items-center gap-3 mb-3 md:mb-4">
+                <Image src="/logo.png" alt="Logo" width={32} height={32} className="object-contain" />
+                <h3 className="text-2xl md:text-3xl font-extrabold">近期活動與聚會</h3>
+              </div>
+              <p className="text-sm md:text-base text-slate-400 pl-11">重溫昔日情誼，支持母校發展</p>
             </div>
             <Link href="/events" className="hidden sm:inline-flex items-center text-blue-400 font-semibold hover:text-blue-300 transition-colors">
               查看全部活動 &rarr;
@@ -134,7 +138,10 @@ function MainHomePage({ latestNews }: { latestNews: any[] }) {
       <section className="py-16 md:py-24 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-8 md:mb-12">
-            <h3 className="text-2xl md:text-3xl font-extrabold text-blue-900">校友會動態</h3>
+            <div className="flex items-center gap-3">
+              <Image src="/logo.png" alt="Logo" width={36} height={36} className="object-contain" />
+              <h3 className="text-2xl md:text-3xl font-extrabold text-blue-900">校友會動態</h3>
+            </div>
             <Link href="/news" className="hidden sm:inline-flex items-center text-blue-600 font-semibold hover:text-blue-800 transition-colors">
               查看全部新聞 &rarr;
             </Link>
