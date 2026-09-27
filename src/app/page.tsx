@@ -16,7 +16,7 @@ async function fetchLatestNews() {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
 }
 
-// 🌟 新增：獲取「關於我們」資料
+// 🌟 獲取「關於我們」資料 (對接 CMS 結構化數據)
 async function fetchAboutData() {
   try {
     const docSnap = await getDoc(doc(db, 'pages', 'about'));
@@ -44,43 +44,16 @@ function MaintenanceView() {
 function MainHomePage({ latestNews, aboutData }: { latestNews: any[], aboutData: any }) {
   
   // ==========================================
-  // 🧠 智能解析器：將 CMS 的單一 HTML 拆解為雙欄 UI
+  // 🧠 直接讀取結構化數據，並設定 Fallback 預設值
   // ==========================================
-  let introHtml = '';
-  let committeeMembers: { role: string, name: string }[] = [];
-
-  if (aboutData?.content) {
-    // 1. 利用分隔線 <hr> 將內容分為上下兩半 (對應首頁的左右兩欄)
-    const parts = aboutData.content.split(/<hr[^>]*>/);
-    
-    // 2. 左半部：介紹文字 (移除 CMS 中重複的 H3 標題)
-    introHtml = (parts[0] || '').replace(/<h3>.*?<\/h3>/, '').trim();
-
-    // 3. 右半部：解析幹事會名單
-    if (parts.length > 1) {
-      const rawCommitteeHtml = parts[1];
-      // 利用 Regex 抓取 <b>職位</b>：姓名 的格式
-      const regex = /<b>(.*?)<\/b>[：:](.*?)(?:<br\s*\/?>|<\/p>|$)/g;
-      let match;
-      while ((match = regex.exec(rawCommitteeHtml)) !== null) {
-        committeeMembers.push({ 
-          role: match[1].replace(/<[^>]+>/g, '').trim(), // 清除多餘的 HTML 標籤
-          name: match[2].replace(/<[^>]+>/g, '').trim() 
-        });
-      }
-    }
-  }
-
-  // Fallback 預設資料 (若解析失敗或無資料時顯示)
-  if (!introHtml) {
-    introHtml = '<p>「教育是一件內心的事情。」 作為慈幼會創辦人聖若望·鮑思高（St. John Bosco）畢生致力於青少年的教育與關懷。他提倡的「預防教育法」——以理智、宗教、仁愛為核心，深深影響了鄧鏡波學校的辦學理念。</p><br/><p>本會冠以「鮑思高」之名，旨在提醒所有畢業校友，無論身處社會何方，皆應秉持母校教誨，關愛弱勢，熱心服務。</p>';
-  }
-  if (committeeMembers.length === 0) {
-    committeeMembers = [
-      { role: '會長', name: '李小明' }, { role: '副會長', name: '張大志' },
-      { role: '秘書長', name: '陳建國' }, { role: '司庫', name: '黃家輝' },
-    ];
-  }
+  const introText = aboutData?.intro || '「教育是一件內心的事情。」 作為慈幼會創辦人聖若望·鮑思高（St. John Bosco）畢生致力於青少年的教育與關懷。他提倡的「預防教育法」——以理智、宗教、仁愛為核心，深深影響了鄧鏡波學校的辦學理念。\n\n本會冠以「鮑思高」之名，旨在提醒所有畢業校友，無論身處社會何方，皆應秉持母校教誨，關愛弱勢，熱心服務。';
+  
+  const committeeList = aboutData?.committee && aboutData.committee.length > 0 
+    ? aboutData.committee 
+    : [
+        { role: '會長', name: '李小明' }, { role: '副會長', name: '張大志' },
+        { role: '秘書長', name: '陳建國' }, { role: '司庫', name: '黃家輝' }
+      ];
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-800">
@@ -104,7 +77,7 @@ function MainHomePage({ latestNews, aboutData }: { latestNews: any[], aboutData:
         </div>
       </section>
 
-      {/* 🌟 關於母校與鮑思高精神 (已整合動態資料與靜態 UI) */}
+      {/* 🌟 關於母校與鮑思高精神 (結構化數據渲染) */}
       <section id="about" className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
@@ -113,23 +86,22 @@ function MainHomePage({ latestNews, aboutData }: { latestNews: any[], aboutData:
             <div>
               <h3 className="text-2xl md:text-3xl font-extrabold text-blue-900 mb-6 relative inline-flex items-center gap-3">
                 <Image src="/logo.png" alt="Logo" width={36} height={36} className="object-contain" />
-                <span>母校與鮑思高精神</span>
+                <span>{aboutData?.title || '母校與鮑思高精神'}</span>
                 <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-blue-500 rounded-full"></span>
               </h3>
               
-              {/* 使用 prose 設定基礎字體大小與顏色，並將 CMS HTML 注入 */}
-              <div 
-                className="prose prose-blue prose-p:text-base md:prose-p:text-lg prose-p:text-slate-600 prose-p:leading-relaxed max-w-none mb-8"
-                dangerouslySetInnerHTML={{ __html: introHtml }}
-              />
+              {/* 使用 whitespace-pre-wrap 完美呈現 CMS 中的換行 */}
+              <div className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-wrap mb-8">
+                {introText}
+              </div>
             </div>
             
-            {/* 右側：幹事會列表 (保留原本的精美 UI 排版) */}
+            {/* 右側：幹事會列表 (直接使用陣列 mapping) */}
             <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
               <h4 className="text-xl md:text-2xl font-bold text-slate-800 mb-6">本屆幹事會 (Committee)</h4>
               <ul className="space-y-4 text-sm md:text-base text-slate-700">
-                {committeeMembers.map((member, idx) => (
-                  <li key={idx} className={`flex justify-between ${idx !== committeeMembers.length - 1 ? 'border-b border-slate-200 pb-3' : ''}`}>
+                {committeeList.map((member: any, idx: number) => (
+                  <li key={idx} className={`flex justify-between ${idx !== committeeList.length - 1 ? 'border-b border-slate-200 pb-3' : ''}`}>
                     <span className="font-semibold text-slate-800">{member.role}</span>
                     <span className="text-slate-600">{member.name}</span>
                   </li>
