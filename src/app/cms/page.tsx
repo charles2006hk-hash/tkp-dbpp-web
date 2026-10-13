@@ -27,7 +27,7 @@ interface ContentData {
 
 interface RegistrationData {
   id: string;
-  name?: string; // 舊有資料相容
+  name?: string;
   chineseName?: string;
   englishName?: string;
   phone: string;
@@ -60,7 +60,7 @@ export default function CMSDashboard() {
   // 測試資料導入狀態
   const [isSeeding, setIsSeeding] = useState(false);
 
-  // 報名名單 (Roster) 狀態
+  // 活動報名名單 (Roster) 狀態
   const [viewingRosterFor, setViewingRosterFor] = useState<string | null>(null);
   const [rosterList, setRosterList] = useState<RegistrationData[]>([]);
   const [rosterLoading, setRosterLoading] = useState(false);
@@ -87,11 +87,9 @@ export default function CMSDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // ⚠️ 資安提醒：上線前請務必將此處替換為 Firebase Auth signInWithEmailAndPassword 
     setIsAuthenticated(true); 
   };
 
-  // 讀取動態與活動
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -105,7 +103,6 @@ export default function CMSDashboard() {
     }
   };
 
-  // 讀取「關於我們」單頁內容 (結構化資料)
   const fetchAboutPage = async () => {
     setIsLoading(true);
     try {
@@ -117,10 +114,8 @@ export default function CMSDashboard() {
           title: data.title || '鄧鏡波學校鮑思高同學會',
           intro: data.intro || '「教育是一件內心的事情。」 作為慈幼會創辦人聖若望·鮑思高（St. John Bosco）畢生致力於青少年的教育與關懷。\n\n本會冠以「鮑思高」之名，旨在提醒所有畢業校友，無論身處社會何方，皆應秉持母校教誨，關愛弱勢，熱心服務。',
           committee: data.committee && data.committee.length > 0 ? data.committee : [
-            { role: '會長', name: '李小明' },
-            { role: '副會長', name: '張大志' },
-            { role: '秘書長', name: '陳建國' },
-            { role: '司庫', name: '黃家輝' }
+            { role: '會長', name: '李小明' }, { role: '副會長', name: '張大志' },
+            { role: '秘書長', name: '陳建國' }, { role: '司庫', name: '黃家輝' }
           ]
         });
       } else {
@@ -142,7 +137,6 @@ export default function CMSDashboard() {
     }
   };
 
-  // 讀取會員申請名單
   const fetchMembers = async () => {
     setIsLoading(true);
     try {
@@ -156,7 +150,6 @@ export default function CMSDashboard() {
     }
   };
 
-  // 讀取活動報名名單
   const fetchRoster = async (eventId: string) => {
     setViewingRosterFor(eventId);
     setRosterLoading(true);
@@ -183,9 +176,6 @@ export default function CMSDashboard() {
     }
   };
 
-  // -------------------------
-  // 內容 CRUD 功能
-  // -------------------------
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -238,7 +228,6 @@ export default function CMSDashboard() {
     }
   };
 
-  // 幹事會陣列操作函數
   const handleCommitteeChange = (index: number, field: 'role' | 'name', value: string) => {
     const newCommittee = [...(currentPost.committee || [])];
     newCommittee[index][field] = value;
@@ -273,7 +262,6 @@ export default function CMSDashboard() {
     });
   }, [dataList, memberFilter, memberSearch, activeTab]);
 
-  // 發送群發訊息邏輯
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     const recipients = filteredMembers.filter(m => m.status === 'approved').map(m => m.email);
@@ -281,15 +269,7 @@ export default function CMSDashboard() {
       alert("目前過濾條件中沒有「已批准」的會員可發送訊息。");
       return;
     }
-    
-    console.log("Mock Email Sending Triggered:");
-    console.log("Recipients:", recipients);
-    console.log("Subject:", messageData.subject);
-    console.log("Content:", messageData.content);
-
-    // TODO: 未來在此處串接 Firebase Cloud Functions 或 SendGrid API
-    alert(`系統提示：成功模擬發送通知至 ${recipients.length} 位會員！\n\n(註：此為前端 UI 模擬。實際寄信需串接後端 API。)`);
-    
+    alert(`系統提示：成功模擬發送通知至 ${recipients.length} 位會員！\n\n(註：此為前端 UI 模擬。實際寄信需串接 Firebase API。)`);
     setIsMessageModalOpen(false);
     setMessageData({ subject: '', content: '' });
   };
@@ -310,10 +290,9 @@ export default function CMSDashboard() {
       snapshot.docs.forEach((document) => batch.delete(document.ref));
 
       const sampleEvents = [
-        { title: "2026 校友會週年大會 (AGM)", date: "2026-10-01", eventDateTime: "2026-11-15 14:00", content: "誠邀各位會員出席，共商會務發展及票選新一屆幹事。會後將備有茶點招待。\n\n流程：\n1. 會長致辭\n2. 財政報告\n3. 新一屆幹事選舉\n4. 自由交流與茶會", imageUrl: "", status: "upcoming", contactInfo: "陳秘書 9123-4567", notificationEmail: "admin@tkp-dbpp.org.hk", registrationUrl: "", createdAt: new Date() },
-        { title: "鄧鏡波盃 舊生籃球邀請賽", date: "2026-10-15", eventDateTime: "2026-12-10 09:00", content: "穿上波衫，重返修院球場！歡迎各屆校友組隊參加，與師兄弟切磋球技，重溫熱血青春。\n\n報名費：每隊 $500\n名額：16 隊 (先到先得)", imageUrl: "", status: "upcoming", contactInfo: "李副會長 9876-5432", notificationEmail: "admin@tkp-dbpp.org.hk", registrationUrl: "", createdAt: new Date() },
-        { title: "鮑思高瞻禮感恩祭暨舊生晚宴", date: "2026-11-01", eventDateTime: "2027-01-31 18:00", content: "紀念會祖聖若望·鮑思高，齊聚一堂感念恩師教導。晚宴將設有大抽獎及校友表演環節。\n\n地點：母校大禮堂\n餐券：每位 $300 (大小同價)", imageUrl: "", status: "upcoming", contactInfo: "黃司庫 6123-8888", notificationEmail: "", registrationUrl: "", createdAt: new Date() },
-        { title: "2025 校友會新春盆菜宴", date: "2025-01-10", eventDateTime: "2025-02-15 19:00", content: "超過三百名校友及老師聚首母校操場，共享傳統盆菜，氣氛熱鬧，圓滿結束。感謝各位校友的鼎力支持！\n\n當晚除了豐富的盆菜，還有師生才藝表演以及幸運大抽獎，讓大家在歡笑聲中度過了一個難忘的夜晚。", imageUrl: "", status: "past", contactInfo: "", notificationEmail: "", registrationUrl: "", createdAt: new Date() }
+        { title: "2026 校友會週年大會 (AGM)", date: "2026-10-01", eventDateTime: "2026-11-15 14:00", content: "誠邀各位會員出席，共商會務發展及票選新一屆幹事。會後將備有茶點招待。", imageUrl: "", status: "upcoming", contactInfo: "陳秘書 9123-4567", notificationEmail: "admin@tkp-dbpp.org.hk", registrationUrl: "", createdAt: new Date() },
+        { title: "鄧鏡波盃 舊生籃球邀請賽", date: "2026-10-15", eventDateTime: "2026-12-10 09:00", content: "穿上波衫，重返修院球場！歡迎各屆校友組隊參加。", imageUrl: "", status: "upcoming", contactInfo: "李副會長 9876-5432", notificationEmail: "admin@tkp-dbpp.org.hk", registrationUrl: "", createdAt: new Date() },
+        { title: "鮑思高瞻禮感恩祭暨舊生晚宴", date: "2026-11-01", eventDateTime: "2027-01-31 18:00", content: "紀念會祖聖若望·鮑思高，齊聚一堂感念恩師教導。晚宴將設有大抽獎及校友表演環節。", imageUrl: "", status: "upcoming", contactInfo: "黃司庫 6123-8888", notificationEmail: "", registrationUrl: "", createdAt: new Date() }
       ];
 
       sampleEvents.forEach((event) => {
@@ -425,7 +404,7 @@ export default function CMSDashboard() {
   // -------------------------
   return (
     <div className="min-h-screen flex bg-slate-50 relative">
-      {/* 手機版遮罩 (Overlay) */}
+      {/* 手機版遮罩 */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/60 z-30 md:hidden transition-opacity" 
@@ -487,11 +466,10 @@ export default function CMSDashboard() {
             </div>
           </header>
 
-          {/* 會員審批列表 (含過濾、搜索與發送訊息) */}
-          {activeTab === 'members' ? (
+          {/* 會員審批列表 */}
+          {activeTab === 'members' && !isEditing && (
              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
                
-               {/* 過濾、搜索與信息發佈工具列 */}
                <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row gap-4 justify-between items-center">
                  <div className="flex w-full md:w-auto gap-2">
                    <select 
@@ -524,19 +502,18 @@ export default function CMSDashboard() {
                  <table className="w-full text-left text-sm text-slate-600">
                    <thead className="bg-white text-slate-800 font-semibold border-b border-slate-200 whitespace-nowrap">
                      <tr>
-                       <th className="p-4">姓名</th>
+                       <th className="p-4">申請人姓名</th>
                        <th className="p-4">聯絡資料</th>
                        <th className="p-4">學籍 (畢業年/班別/學號)</th>
-                       <th className="p-4">狀態</th>
+                       <th className="p-4">審批狀態</th>
                        <th className="p-4 text-right">操作</th>
                      </tr>
                    </thead>
                    <tbody>
-                     {isLoading ? <tr><td colSpan={5} className="p-8 text-center text-slate-400">載入中...</td></tr> : 
-                      filteredMembers.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-slate-400">找不到符合的申請資料</td></tr> : 
-                      filteredMembers.map(member => (
+                     {isLoading && <tr><td colSpan={5} className="p-8 text-center text-slate-400">載入中...</td></tr>}
+                     {!isLoading && filteredMembers.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-400">找不到符合的申請資料</td></tr>}
+                     {!isLoading && filteredMembers.map(member => (
                        <tr key={member.id} className="border-b border-slate-100 hover:bg-slate-50">
-                         {/* 相容舊資料渲染 */}
                          <td className="p-4 font-bold text-slate-900 whitespace-nowrap">
                            {member.chineseName || member.name}
                            {member.englishName && <><br/><span className="text-xs text-slate-500 font-normal">{member.englishName}</span></>}
@@ -568,8 +545,10 @@ export default function CMSDashboard() {
                  </table>
                </div>
              </div>
-          ) : isEditing || activeTab === 'about' ? (
-            /* 通用內容編輯表單 */
+          )}
+
+          {/* 通用內容編輯表單 (包含 About, News, Events) */}
+          {isEditing && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 md:p-8">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg md:text-xl font-bold text-slate-800">{currentPost.id ? '編輯內容' : '新增內容'}</h2>
@@ -581,7 +560,7 @@ export default function CMSDashboard() {
                   <input type="text" required value={currentPost.title || ''} onChange={e => setCurrentPost({...currentPost, title: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
 
-                {activeTab === 'about' ? (
+                {activeTab === 'about' && (
                   <div className="space-y-8 border-t border-slate-100 pt-6">
                     <div>
                       <label className="block text-base font-bold text-slate-800 mb-2">1. 介紹文字 (純文字)</label>
@@ -599,16 +578,30 @@ export default function CMSDashboard() {
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                         {(currentPost.committee || []).map((member: any, index: number) => (
                           <div key={index} className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 border border-slate-200 rounded-lg shadow-sm">
-                            <input type="text" placeholder="職位" required value={member.role} onChange={e => handleCommitteeChange(index, 'role', e.target.value)} className="w-full sm:w-1/3 border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
-                            <input type="text" placeholder="姓名" required value={member.name} onChange={e => handleCommitteeChange(index, 'name', e.target.value)} className="w-full sm:flex-grow border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
-                            <button type="button" onClick={() => removeCommitteeMember(index)} className="w-full sm:w-auto px-3 py-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-md text-sm font-bold">刪除</button>
+                            <input 
+                              type="text" placeholder="職位 (例: 會長)" required 
+                              value={member.role} onChange={e => handleCommitteeChange(index, 'role', e.target.value)} 
+                              className="w-full sm:w-1/3 border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" 
+                            />
+                            <input 
+                              type="text" placeholder="姓名 (例: 李小明)" required 
+                              value={member.name} onChange={e => handleCommitteeChange(index, 'name', e.target.value)} 
+                              className="w-full sm:flex-grow border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" 
+                            />
+                            <button type="button" onClick={() => removeCommitteeMember(index)} className="w-full sm:w-auto px-3 py-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-md text-sm font-bold">
+                              刪除
+                            </button>
                           </div>
                         ))}
-                        <button type="button" onClick={addCommitteeMember} className="mt-3 w-full py-2 border-2 border-dashed border-slate-300 text-slate-600 font-bold rounded-lg hover:border-purple-500 hover:text-purple-600 transition-colors">+ 新增成員</button>
+                        <button type="button" onClick={addCommitteeMember} className="mt-3 w-full py-2 border-2 border-dashed border-slate-300 text-slate-600 font-bold rounded-lg hover:border-purple-500 hover:text-purple-600 transition-colors">
+                          + 新增幹事會成員
+                        </button>
                       </div>
                     </div>
                   </div>
-                ) : (
+                )}
+
+                {activeTab !== 'about' && (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                       <div>
@@ -618,30 +611,60 @@ export default function CMSDashboard() {
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">封面圖片 (上傳會自動壓縮)</label>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
-                          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-200 font-medium whitespace-nowrap">{isUploading ? '壓縮上傳中...' : '選擇圖片上傳'}</button>
+                          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-200 font-medium whitespace-nowrap">
+                            {isUploading ? '壓縮上傳中...' : '選擇圖片上傳'}
+                          </button>
                           <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                          <input type="url" value={currentPost.imageUrl || ''} onChange={e => setCurrentPost({...currentPost, imageUrl: e.target.value})} placeholder="或貼上網址" className="w-full flex-grow border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" />
+                          <input type="url" value={currentPost.imageUrl || ''} onChange={e => setCurrentPost({...currentPost, imageUrl: e.target.value})} placeholder="或直接貼上圖片網址" className="w-full flex-grow border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" />
                         </div>
-                        {currentPost.imageUrl && <div className="mt-2 relative w-32 h-32 border border-slate-200 rounded-lg overflow-hidden bg-slate-50"><Image src={currentPost.imageUrl} alt="預覽" fill className="object-cover" /></div>}
+                        {currentPost.imageUrl && (
+                          <div className="mt-2 relative w-32 h-32 border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                            <Image alt="預覽圖" className="object-cover" fill src="{currentPost.imageUrl}"/>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {activeTab === 'news' ? (
-                      <div><label className="block text-sm font-semibold text-slate-700 mb-1">YouTube 影片 URL</label><input type="url" value={currentPost.youtubeUrl || ''} onChange={e => setCurrentPost({...currentPost, youtubeUrl: e.target.value})} placeholder="https://..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
-                    ) : (
+                    {activeTab === 'news' && (
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">YouTube 影片 URL (選填)</label>
+                        <input type="url" value={currentPost.youtubeUrl || ''} onChange={e => setCurrentPost({...currentPost, youtubeUrl: e.target.value})} placeholder="https://www.youtube.com/embed/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                    )}
+
+                    {activeTab === 'events' && (
                       <div className="bg-emerald-50 p-4 md:p-6 rounded-lg border border-emerald-100 space-y-4">
                         <h3 className="font-bold text-emerald-800 mb-2">活動專屬設定</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div><label className="block text-sm font-semibold text-slate-700 mb-1">活動狀態</label><select value={currentPost.status || 'upcoming'} onChange={e => setCurrentPost({...currentPost, status: e.target.value as 'upcoming' | 'past'})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none"><option value="upcoming">即將舉辦</option><option value="past">圓滿結束</option></select></div>
-                          <div><label className="block text-sm font-semibold text-slate-700 mb-1">活動時間</label><input type="text" value={currentPost.eventDateTime || ''} onChange={e => setCurrentPost({...currentPost, eventDateTime: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
+                           <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1">活動狀態</label>
+                            <select value={currentPost.status || 'upcoming'} onChange={e => setCurrentPost({...currentPost, status: e.target.value as 'upcoming' | 'past'})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+                              <option value="upcoming">即將舉辦 (開放報名)</option>
+                              <option value="past">圓滿結束 (歷史回顧)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1">活動舉辦時間 (例如: 2026-11-15 18:00)</label>
+                            <input type="text" value={currentPost.eventDateTime || ''} onChange={e => setCurrentPost({...currentPost, eventDateTime: e.target.value})} placeholder="輸入活動時間" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div><label className="block text-sm font-semibold text-slate-700 mb-1">聯絡人</label><input type="text" value={currentPost.contactInfo || ''} onChange={e => setCurrentPost({...currentPost, contactInfo: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
-                          <div><label className="block text-sm font-semibold text-slate-700 mb-1">通知 Email</label><input type="email" value={currentPost.notificationEmail || ''} onChange={e => setCurrentPost({...currentPost, notificationEmail: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1">聯絡人資訊 (選填)</label>
+                            <input type="text" value={currentPost.contactInfo || ''} onChange={e => setCurrentPost({...currentPost, contactInfo: e.target.value})} placeholder="例如: 陳先生 91234567" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1">報名通知 Email (選填)</label>
+                            <input type="email" value={currentPost.notificationEmail || ''} onChange={e => setCurrentPost({...currentPost, notificationEmail: e.target.value})} placeholder="admin@tkp-dbpp.org.hk" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                          </div>
                         </div>
-                        <div><label className="block text-sm font-semibold text-slate-700 mb-1">外部報名連結</label><input type="url" value={currentPost.registrationUrl || ''} onChange={e => setCurrentPost({...currentPost, registrationUrl: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1">外部報名連結 (選填，留空則啟用站內報名)</label>
+                          <input type="url" value={currentPost.registrationUrl || ''} onChange={e => setCurrentPost({...currentPost, registrationUrl: e.target.value})} placeholder="https://forms.gle/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        </div>
                       </div>
                     )}
+
                     <div>
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 gap-2">
                         <label className="block text-sm font-semibold text-slate-700">詳細內容 (支援 HTML) *</label>
@@ -653,44 +676,67 @@ export default function CMSDashboard() {
                           <button type="button" onClick={() => insertHTML('<a href="網址" target="_blank" class="text-blue-600 underline">', '</a>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">連結</button>
                         </div>
                       </div>
-                      <textarea id="content-editor" required rows={10} value={currentPost.content || ''} onChange={e => setCurrentPost({...currentPost, content: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none whitespace-pre-wrap font-mono text-sm leading-relaxed" />
+                      <textarea id="content-editor" required rows={10} value={currentPost.content || ''} onChange={e => setCurrentPost({...currentPost, content: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none whitespace-pre-wrap font-mono text-sm leading-relaxed" placeholder="在此輸入內容..."></textarea>
                     </div>
                   </>
                 )}
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                   {activeTab !== 'about' && <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2.5 text-sm md:text-base text-slate-600 font-bold hover:bg-slate-100 rounded-lg">取消</button>}
-                  <button type="submit" disabled={isLoading || isUploading} className={`px-6 py-2.5 text-sm md:text-base text-white font-bold rounded-lg disabled:opacity-50 ${activeTab === 'about' ? 'bg-purple-600' : 'bg-blue-600'}`}>儲存發佈</button>
+                  <button type="submit" disabled={isLoading || isUploading} className={`px-6 py-2.5 text-sm md:text-base text-white font-bold rounded-lg disabled:opacity-50 ${activeTab === 'about' ? 'bg-purple-600 hover:bg-purple-700' : activeTab === 'news' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+                    {isLoading ? '儲存中...' : '儲存發佈'}
+                  </button>
                 </div>
               </form>
             </div>
-          ) : (
+          )}
+
+          {/* 新聞與活動列表 (List View) */}
+          {(activeTab === 'news' || activeTab === 'events') && !isEditing && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="bg-slate-50 text-slate-800 font-semibold border-b border-slate-200 whitespace-nowrap">
-                    <tr><th className="p-4 w-28">發佈日期</th><th className="p-4 min-w-[250px]">標題</th>{activeTab === 'events' && <th className="p-4 w-28">活動狀態</th>}<th className="p-4 min-w-[140px] text-right">操作</th></tr>
+                    <tr>
+                      <th className="p-4 w-28">發佈日期</th>
+                      <th className="p-4 min-w-[250px]">標題</th>
+                      {activeTab === 'events' && <th className="p-4 w-28">活動狀態</th>}
+                      <th className="p-4 min-w-[140px] text-right">操作</th>
+                    </tr>
                   </thead>
                   <tbody>
-                    {isLoading ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">載入中...</td></tr> : 
-                     dataList.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">無資料</td></tr> : 
-                     dataList.map(post => (
-                        <tr key={post.id} className="border-b border-slate-100 hover:bg-slate-50">
-                          <td className="p-4 whitespace-nowrap">{post.date}</td><td className="p-4 font-medium text-slate-900">{post.title}</td>
-                          {activeTab === 'events' && (<td className="p-4 whitespace-nowrap"><span className="bg-slate-100 px-2 py-1 rounded text-xs">{post.status === 'upcoming' ? '即將舉辦' : '圓滿結束'}</span></td>)}
-                          <td className="p-4 text-right space-x-3 whitespace-nowrap">
-                            {activeTab === 'events' && <button onClick={() => fetchRoster(post.id)} className="text-emerald-600 font-semibold hover:underline">名單</button>}
-                            <button onClick={() => { setCurrentPost(post); setIsEditing(true); }} className="text-blue-600 font-semibold hover:underline">編輯</button>
-                            <button onClick={() => handleDelete(post.id)} className="text-red-500 font-semibold hover:underline">刪除</button>
-                          </td>
-                        </tr>
-                      ))
+                    {isLoading && (
+                      <tr><td colSpan={activeTab === 'events' ? 4 : 3} className="p-8 text-center text-slate-400">載入中...</td></tr>
                     )}
+                    {!isLoading && dataList.length === 0 && (
+                      <tr><td colSpan={activeTab === 'events' ? 4 : 3} className="p-8 text-center text-slate-400">目前沒有資料，點擊右上角新增。</td></tr>
+                    )}
+                    {!isLoading && dataList.length > 0 && dataList.map(post => (
+                      <tr key={post.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="p-4 whitespace-nowrap">{post.date}</td>
+                        <td className="p-4 font-medium text-slate-900">{post.title}</td>
+                        {activeTab === 'events' && (
+                          <td className="p-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${post.status === 'upcoming' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                              {post.status === 'upcoming' ? '即將舉辦' : '圓滿結束'}
+                            </span>
+                          </td>
+                        )}
+                        <td className="p-4 text-right space-x-3 whitespace-nowrap">
+                          {activeTab === 'events' && (
+                            <button onClick={() => fetchRoster(post.id)} className="text-emerald-600 font-semibold hover:underline">名單</button>
+                          )}
+                          <button onClick={() => { setCurrentPost(post); setIsEditing(true); }} className="text-blue-600 font-semibold hover:underline">編輯</button>
+                          <button onClick={() => handleDelete(post.id)} className="text-red-500 font-semibold hover:underline">刪除</button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
+
         </div>
       </main>
 
@@ -698,29 +744,82 @@ export default function CMSDashboard() {
       {isMessageModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
-            <div className="bg-amber-600 p-4 text-white flex justify-between items-center"><h3 className="font-bold text-lg">發送群發通知</h3><button onClick={() => setIsMessageModalOpen(false)} className="text-amber-100 hover:text-white text-2xl leading-none">&times;</button></div>
+            <div className="bg-amber-600 p-4 text-white flex justify-between items-center">
+              <h3 className="font-bold text-lg">發送群發通知 (Email)</h3>
+              <button onClick={() => setIsMessageModalOpen(false)} className="text-amber-100 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
             <div className="p-6">
+              <p className="text-sm text-slate-600 mb-4 bg-amber-50 border border-amber-100 p-3 rounded-lg">
+                系統將發送 Email 給目前過濾條件中狀態為 <span className="font-bold text-emerald-600">「已批准 (Approved)」</span> 的校友。
+                <br/>目前符合條件人數：<span className="font-bold">{filteredMembers.filter(m => m.status === 'approved').length} 人</span>
+              </p>
               <form onSubmit={handleSendMessage} className="space-y-4">
-                <div><label className="block text-sm font-semibold mb-1">主旨</label><input type="text" required value={messageData.subject} onChange={e => setMessageData({...messageData, subject: e.target.value})} className="w-full border rounded-lg p-2.5 outline-none focus:border-amber-500" /></div>
-                <div><label className="block text-sm font-semibold mb-1">內容</label><textarea required rows={6} value={messageData.content} onChange={e => setMessageData({...messageData, content: e.target.value})} className="w-full border rounded-lg p-2.5 outline-none focus:border-amber-500 whitespace-pre-wrap" /></div>
-                <div className="flex justify-end gap-3 pt-2"><button type="button" onClick={() => setIsMessageModalOpen(false)} className="px-4 py-2 font-bold hover:bg-slate-100 rounded-lg text-slate-600">取消</button><button type="submit" className="px-6 py-2 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700">確認發送</button></div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">郵件主旨</label>
+                  <input type="text" required value={messageData.subject} onChange={e => setMessageData({...messageData, subject: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-amber-500" placeholder="例如：【校友會通知】週年大會邀請" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">郵件內容</label>
+                  <textarea required rows={6} value={messageData.content} onChange={e => setMessageData({...messageData, content: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-amber-500 whitespace-pre-wrap" placeholder="請輸入郵件內文..."></textarea>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button type="button" onClick={() => setIsMessageModalOpen(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg">取消</button>
+                  <button type="submit" className="px-6 py-2 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700">確認發送</button>
+                </div>
               </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* 活動報名名單 Modal */}
+      {/* 活動報名名單 Modal (CMS端) */}
       {viewingRosterFor && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col">
-            <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50"><h3 className="font-bold">報名名單</h3><button onClick={() => setViewingRosterFor(null)} className="text-2xl text-slate-400">&times;</button></div>
+            <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+              <h3 className="text-lg md:text-xl font-bold text-slate-800">報名名單 (共 {rosterList.length} 人)</h3>
+              <button onClick={() => setViewingRosterFor(null)} className="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
+            </div>
             <div className="p-0 md:p-6 overflow-y-auto">
-              <table className="w-full text-left text-sm text-slate-600"><thead className="bg-slate-100"><tr><th className="p-3">姓名</th><th className="p-3">電話</th><th className="p-3">Email</th><th className="p-3">畢業年</th><th className="p-3">備註</th></tr></thead><tbody>{rosterList.map(u => (<tr key={u.id} className="border-b"><td className="p-3 font-semibold">{u.chineseName || u.name} {u.englishName}</td><td className="p-3">{u.phone}</td><td className="p-3">{u.email}</td><td className="p-3">{u.gradYear || '-'}</td><td className="p-3">{u.remarks || '-'}</td></tr>))}</tbody></table>
+              {rosterLoading ? (
+                <p className="text-center text-slate-500 py-8">載入名單中...</p>
+              ) : rosterList.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">目前尚無人報名</p>
+              ) : (
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left text-sm text-slate-600">
+                    <thead className="bg-slate-100 text-slate-800 whitespace-nowrap">
+                      <tr>
+                        <th className="p-3 md:rounded-tl-lg">姓名</th>
+                        <th className="p-3">電話</th>
+                        <th className="p-3">Email</th>
+                        <th className="p-3">畢業年</th>
+                        <th className="p-3 md:rounded-tr-lg">備註</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rosterList.map(user => (
+                        <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
+                          {/* 🌟 報名名單亦支援新舊資料兼容 */}
+                          <td className="p-3 font-semibold text-slate-900 whitespace-nowrap">
+                            {user.chineseName || user.name}
+                            {user.englishName && <><br/><span className="text-xs text-slate-500 font-normal">{user.englishName}</span></>}
+                          </td>
+                          <td className="p-3 whitespace-nowrap">{user.phone}</td>
+                          <td className="p-3 whitespace-nowrap">{user.email}</td>
+                          <td className="p-3">{user.gradYear || '-'}</td>
+                          <td className="p-3 min-w-[150px]">{user.remarks || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
