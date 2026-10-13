@@ -27,7 +27,9 @@ interface ContentData {
 
 interface RegistrationData {
   id: string;
-  name: string;
+  name?: string; // 舊有資料相容
+  chineseName?: string;
+  englishName?: string;
   phone: string;
   email: string;
   gradYear: string;
@@ -58,7 +60,7 @@ export default function CMSDashboard() {
   // 測試資料導入狀態
   const [isSeeding, setIsSeeding] = useState(false);
 
-  // 活動報名名單 (Roster) 狀態
+  // 報名名單 (Roster) 狀態
   const [viewingRosterFor, setViewingRosterFor] = useState<string | null>(null);
   const [rosterList, setRosterList] = useState<RegistrationData[]>([]);
   const [rosterLoading, setRosterLoading] = useState(false);
@@ -66,9 +68,9 @@ export default function CMSDashboard() {
   // 手機版側邊欄開關狀態
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // 🌟 會員管理系統專用狀態 (搜索、過濾、信息發佈)
+  // 會員管理系統專用狀態 (搜索、過濾、信息發佈)
   const [memberSearch, setMemberSearch] = useState('');
-  const [memberFilter, setMemberFilter] = useState('all'); // all | pending | approved | rejected
+  const [memberFilter, setMemberFilter] = useState('all'); 
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [messageData, setMessageData] = useState({ subject: '', content: '' });
 
@@ -252,7 +254,7 @@ export default function CMSDashboard() {
   };
 
   // -------------------------
-  // 🌟 會員過濾與搜索邏輯 (Client-side)
+  // 會員過濾與搜索邏輯 (Client-side)
   // -------------------------
   const filteredMembers = useMemo(() => {
     if (activeTab !== 'members') return [];
@@ -261,6 +263,8 @@ export default function CMSDashboard() {
       const searchStr = memberSearch.toLowerCase();
       const matchSearch = 
         (member.name || '').toLowerCase().includes(searchStr) ||
+        (member.chineseName || '').toLowerCase().includes(searchStr) ||
+        (member.englishName || '').toLowerCase().includes(searchStr) ||
         (member.email || '').toLowerCase().includes(searchStr) ||
         (member.phone || '').includes(searchStr) ||
         (member.studentClass || '').toLowerCase().includes(searchStr) ||
@@ -269,7 +273,7 @@ export default function CMSDashboard() {
     });
   }, [dataList, memberFilter, memberSearch, activeTab]);
 
-  // 🌟 發送群發訊息邏輯
+  // 發送群發訊息邏輯
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     const recipients = filteredMembers.filter(m => m.status === 'approved').map(m => m.email);
@@ -421,6 +425,7 @@ export default function CMSDashboard() {
   // -------------------------
   return (
     <div className="min-h-screen flex bg-slate-50 relative">
+      {/* 手機版遮罩 (Overlay) */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/60 z-30 md:hidden transition-opacity" 
@@ -451,7 +456,7 @@ export default function CMSDashboard() {
       {/* 主內容區 */}
       <main className="flex-grow p-4 md:p-8 w-full md:max-w-[calc(100%-16rem)] max-h-screen overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
+          {/* Header 區塊 */}
           <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 md:mb-8 gap-4">
             <div className="flex items-center gap-3">
               <button 
@@ -519,10 +524,10 @@ export default function CMSDashboard() {
                  <table className="w-full text-left text-sm text-slate-600">
                    <thead className="bg-white text-slate-800 font-semibold border-b border-slate-200 whitespace-nowrap">
                      <tr>
-                       <th className="p-4">申請人姓名</th>
+                       <th className="p-4">姓名</th>
                        <th className="p-4">聯絡資料</th>
                        <th className="p-4">學籍 (畢業年/班別/學號)</th>
-                       <th className="p-4">審批狀態</th>
+                       <th className="p-4">狀態</th>
                        <th className="p-4 text-right">操作</th>
                      </tr>
                    </thead>
@@ -531,7 +536,11 @@ export default function CMSDashboard() {
                       filteredMembers.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-slate-400">找不到符合的申請資料</td></tr> : 
                       filteredMembers.map(member => (
                        <tr key={member.id} className="border-b border-slate-100 hover:bg-slate-50">
-                         <td className="p-4 font-bold text-slate-900 whitespace-nowrap">{member.name}</td>
+                         {/* 相容舊資料渲染 */}
+                         <td className="p-4 font-bold text-slate-900 whitespace-nowrap">
+                           {member.chineseName || member.name}
+                           {member.englishName && <><br/><span className="text-xs text-slate-500 font-normal">{member.englishName}</span></>}
+                         </td>
                          <td className="p-4 whitespace-nowrap">{member.phone}<br/><span className="text-xs text-slate-400">{member.email}</span></td>
                          <td className="p-4">
                            {member.gradYear} 年 <br/>
@@ -572,7 +581,6 @@ export default function CMSDashboard() {
                   <input type="text" required value={currentPost.title || ''} onChange={e => setCurrentPost({...currentPost, title: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
 
-                {/* 🌟 關於我們專屬：雙區塊結構化資料表單 */}
                 {activeTab === 'about' ? (
                   <div className="space-y-8 border-t border-slate-100 pt-6">
                     <div>
@@ -591,30 +599,17 @@ export default function CMSDashboard() {
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                         {(currentPost.committee || []).map((member: any, index: number) => (
                           <div key={index} className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 border border-slate-200 rounded-lg shadow-sm">
-                            <input 
-                              type="text" placeholder="職位 (例: 會長)" required 
-                              value={member.role} onChange={e => handleCommitteeChange(index, 'role', e.target.value)} 
-                              className="w-full sm:w-1/3 border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" 
-                            />
-                            <input 
-                              type="text" placeholder="姓名 (例: 李小明)" required 
-                              value={member.name} onChange={e => handleCommitteeChange(index, 'name', e.target.value)} 
-                              className="w-full sm:flex-grow border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" 
-                            />
-                            <button type="button" onClick={() => removeCommitteeMember(index)} className="w-full sm:w-auto px-3 py-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-md text-sm font-bold">
-                              刪除
-                            </button>
+                            <input type="text" placeholder="職位" required value={member.role} onChange={e => handleCommitteeChange(index, 'role', e.target.value)} className="w-full sm:w-1/3 border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                            <input type="text" placeholder="姓名" required value={member.name} onChange={e => handleCommitteeChange(index, 'name', e.target.value)} className="w-full sm:flex-grow border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                            <button type="button" onClick={() => removeCommitteeMember(index)} className="w-full sm:w-auto px-3 py-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-md text-sm font-bold">刪除</button>
                           </div>
                         ))}
-                        <button type="button" onClick={addCommitteeMember} className="mt-3 w-full py-2 border-2 border-dashed border-slate-300 text-slate-600 font-bold rounded-lg hover:border-purple-500 hover:text-purple-600 transition-colors">
-                          + 新增幹事會成員
-                        </button>
+                        <button type="button" onClick={addCommitteeMember} className="mt-3 w-full py-2 border-2 border-dashed border-slate-300 text-slate-600 font-bold rounded-lg hover:border-purple-500 hover:text-purple-600 transition-colors">+ 新增成員</button>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <>
-                    {/* 一般文章/活動表單 (完整保留) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">建立/發佈日期 *</label>
@@ -623,58 +618,30 @@ export default function CMSDashboard() {
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">封面圖片 (上傳會自動壓縮)</label>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
-                          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-200 font-medium whitespace-nowrap">
-                            {isUploading ? '壓縮上傳中...' : '選擇圖片上傳'}
-                          </button>
+                          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-200 font-medium whitespace-nowrap">{isUploading ? '壓縮上傳中...' : '選擇圖片上傳'}</button>
                           <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                          <input type="url" value={currentPost.imageUrl || ''} onChange={e => setCurrentPost({...currentPost, imageUrl: e.target.value})} placeholder="或直接貼上圖片網址" className="w-full flex-grow border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" />
+                          <input type="url" value={currentPost.imageUrl || ''} onChange={e => setCurrentPost({...currentPost, imageUrl: e.target.value})} placeholder="或貼上網址" className="w-full flex-grow border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" />
                         </div>
-                        {currentPost.imageUrl && (
-                          <div className="mt-2 relative w-32 h-32 border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                            <Image src={currentPost.imageUrl} alt="預覽圖" fill className="object-cover" />
-                          </div>
-                        )}
+                        {currentPost.imageUrl && <div className="mt-2 relative w-32 h-32 border border-slate-200 rounded-lg overflow-hidden bg-slate-50"><Image src={currentPost.imageUrl} alt="預覽" fill className="object-cover" /></div>}
                       </div>
                     </div>
 
                     {activeTab === 'news' ? (
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">YouTube 影片 URL (選填)</label>
-                        <input type="url" value={currentPost.youtubeUrl || ''} onChange={e => setCurrentPost({...currentPost, youtubeUrl: e.target.value})} placeholder="https://www.youtube.com/embed/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
-                      </div>
+                      <div><label className="block text-sm font-semibold text-slate-700 mb-1">YouTube 影片 URL</label><input type="url" value={currentPost.youtubeUrl || ''} onChange={e => setCurrentPost({...currentPost, youtubeUrl: e.target.value})} placeholder="https://..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
                     ) : (
                       <div className="bg-emerald-50 p-4 md:p-6 rounded-lg border border-emerald-100 space-y-4">
                         <h3 className="font-bold text-emerald-800 mb-2">活動專屬設定</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">活動狀態</label>
-                            <select value={currentPost.status || 'upcoming'} onChange={e => setCurrentPost({...currentPost, status: e.target.value as 'upcoming' | 'past'})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none">
-                              <option value="upcoming">即將舉辦 (開放報名)</option>
-                              <option value="past">圓滿結束 (歷史回顧)</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">活動舉辦時間 (例如: 2026-11-15 18:00)</label>
-                            <input type="text" value={currentPost.eventDateTime || ''} onChange={e => setCurrentPost({...currentPost, eventDateTime: e.target.value})} placeholder="輸入活動時間" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
-                          </div>
+                           <div><label className="block text-sm font-semibold text-slate-700 mb-1">活動狀態</label><select value={currentPost.status || 'upcoming'} onChange={e => setCurrentPost({...currentPost, status: e.target.value as 'upcoming' | 'past'})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none"><option value="upcoming">即將舉辦</option><option value="past">圓滿結束</option></select></div>
+                          <div><label className="block text-sm font-semibold text-slate-700 mb-1">活動時間</label><input type="text" value={currentPost.eventDateTime || ''} onChange={e => setCurrentPost({...currentPost, eventDateTime: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">聯絡人資訊 (選填)</label>
-                            <input type="text" value={currentPost.contactInfo || ''} onChange={e => setCurrentPost({...currentPost, contactInfo: e.target.value})} placeholder="例如: 陳先生 91234567" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">報名通知 Email (選填)</label>
-                            <input type="email" value={currentPost.notificationEmail || ''} onChange={e => setCurrentPost({...currentPost, notificationEmail: e.target.value})} placeholder="admin@tkp-dbpp.org.hk" className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
-                          </div>
+                          <div><label className="block text-sm font-semibold text-slate-700 mb-1">聯絡人</label><input type="text" value={currentPost.contactInfo || ''} onChange={e => setCurrentPost({...currentPost, contactInfo: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
+                          <div><label className="block text-sm font-semibold text-slate-700 mb-1">通知 Email</label><input type="email" value={currentPost.notificationEmail || ''} onChange={e => setCurrentPost({...currentPost, notificationEmail: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1">外部報名連結 (選填，留空則啟用站內報名)</label>
-                          <input type="url" value={currentPost.registrationUrl || ''} onChange={e => setCurrentPost({...currentPost, registrationUrl: e.target.value})} placeholder="https://forms.gle/..." className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
-                        </div>
+                        <div><label className="block text-sm font-semibold text-slate-700 mb-1">外部報名連結</label><input type="url" value={currentPost.registrationUrl || ''} onChange={e => setCurrentPost({...currentPost, registrationUrl: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-2.5 outline-none" /></div>
                       </div>
                     )}
-
                     <div>
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 gap-2">
                         <label className="block text-sm font-semibold text-slate-700">詳細內容 (支援 HTML) *</label>
@@ -686,17 +653,14 @@ export default function CMSDashboard() {
                           <button type="button" onClick={() => insertHTML('<a href="網址" target="_blank" class="text-blue-600 underline">', '</a>')} className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-300">連結</button>
                         </div>
                       </div>
-                      <textarea id="content-editor" required rows={10} value={currentPost.content || ''} onChange={e => setCurrentPost({...currentPost, content: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none whitespace-pre-wrap font-mono text-sm leading-relaxed" placeholder="在此輸入內容..."></textarea>
+                      <textarea id="content-editor" required rows={10} value={currentPost.content || ''} onChange={e => setCurrentPost({...currentPost, content: e.target.value})} className="w-full border border-slate-300 bg-white text-slate-900 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none whitespace-pre-wrap font-mono text-sm leading-relaxed" />
                     </div>
                   </>
                 )}
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                  {/* 單頁模式沒有取消按鈕，因為只有一頁可以改 */}
                   {activeTab !== 'about' && <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2.5 text-sm md:text-base text-slate-600 font-bold hover:bg-slate-100 rounded-lg">取消</button>}
-                  <button type="submit" disabled={isLoading || isUploading} className={`px-6 py-2.5 text-sm md:text-base text-white font-bold rounded-lg disabled:opacity-50 ${activeTab === 'about' ? 'bg-purple-600 hover:bg-purple-700' : activeTab === 'news' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
-                    {isLoading ? '儲存中...' : '儲存發佈'}
-                  </button>
+                  <button type="submit" disabled={isLoading || isUploading} className={`px-6 py-2.5 text-sm md:text-base text-white font-bold rounded-lg disabled:opacity-50 ${activeTab === 'about' ? 'bg-purple-600' : 'bg-blue-600'}`}>儲存發佈</button>
                 </div>
               </form>
             </div>
@@ -705,34 +669,17 @@ export default function CMSDashboard() {
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="bg-slate-50 text-slate-800 font-semibold border-b border-slate-200 whitespace-nowrap">
-                    <tr>
-                      <th className="p-4 w-28">發佈日期</th>
-                      <th className="p-4 min-w-[250px]">標題</th>
-                      {activeTab === 'events' && <th className="p-4 w-28">活動狀態</th>}
-                      <th className="p-4 min-w-[140px] text-right">操作</th>
-                    </tr>
+                    <tr><th className="p-4 w-28">發佈日期</th><th className="p-4 min-w-[250px]">標題</th>{activeTab === 'events' && <th className="p-4 w-28">活動狀態</th>}<th className="p-4 min-w-[140px] text-right">操作</th></tr>
                   </thead>
                   <tbody>
-                    {isLoading ? (
-                      <tr><td colSpan={activeTab === 'events' ? 4 : 3} className="p-8 text-center text-slate-400">載入中...</td></tr>
-                    ) : dataList.length === 0 ? (
-                      <tr><td colSpan={activeTab === 'events' ? 4 : 3} className="p-8 text-center text-slate-400">目前沒有資料，點擊右上角新增。</td></tr>
-                    ) : (
-                      dataList.map(post => (
+                    {isLoading ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">載入中...</td></tr> : 
+                     dataList.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">無資料</td></tr> : 
+                     dataList.map(post => (
                         <tr key={post.id} className="border-b border-slate-100 hover:bg-slate-50">
-                          <td className="p-4 whitespace-nowrap">{post.date}</td>
-                          <td className="p-4 font-medium text-slate-900">{post.title}</td>
-                          {activeTab === 'events' && (
-                            <td className="p-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${post.status === 'upcoming' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                                {post.status === 'upcoming' ? '即將舉辦' : '圓滿結束'}
-                              </span>
-                            </td>
-                          )}
+                          <td className="p-4 whitespace-nowrap">{post.date}</td><td className="p-4 font-medium text-slate-900">{post.title}</td>
+                          {activeTab === 'events' && (<td className="p-4 whitespace-nowrap"><span className="bg-slate-100 px-2 py-1 rounded text-xs">{post.status === 'upcoming' ? '即將舉辦' : '圓滿結束'}</span></td>)}
                           <td className="p-4 text-right space-x-3 whitespace-nowrap">
-                            {activeTab === 'events' && (
-                              <button onClick={() => fetchRoster(post.id)} className="text-emerald-600 font-semibold hover:underline">名單</button>
-                            )}
+                            {activeTab === 'events' && <button onClick={() => fetchRoster(post.id)} className="text-emerald-600 font-semibold hover:underline">名單</button>}
                             <button onClick={() => { setCurrentPost(post); setIsEditing(true); }} className="text-blue-600 font-semibold hover:underline">編輯</button>
                             <button onClick={() => handleDelete(post.id)} className="text-red-500 font-semibold hover:underline">刪除</button>
                           </td>
@@ -751,78 +698,29 @@ export default function CMSDashboard() {
       {isMessageModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
-            <div className="bg-amber-600 p-4 text-white flex justify-between items-center">
-              <h3 className="font-bold text-lg">發送群發通知 (Email)</h3>
-              <button onClick={() => setIsMessageModalOpen(false)} className="text-amber-100 hover:text-white text-2xl leading-none">&times;</button>
-            </div>
+            <div className="bg-amber-600 p-4 text-white flex justify-between items-center"><h3 className="font-bold text-lg">發送群發通知</h3><button onClick={() => setIsMessageModalOpen(false)} className="text-amber-100 hover:text-white text-2xl leading-none">&times;</button></div>
             <div className="p-6">
-              <p className="text-sm text-slate-600 mb-4 bg-amber-50 border border-amber-100 p-3 rounded-lg">
-                系統將發送 Email 給目前過濾條件中狀態為 <span className="font-bold text-emerald-600">「已批准 (Approved)」</span> 的校友。
-                <br/>目前符合條件人數：<span className="font-bold">{filteredMembers.filter(m => m.status === 'approved').length} 人</span>
-              </p>
               <form onSubmit={handleSendMessage} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">郵件主旨</label>
-                  <input type="text" required value={messageData.subject} onChange={e => setMessageData({...messageData, subject: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-amber-500" placeholder="例如：【校友會通知】週年大會邀請" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">郵件內容</label>
-                  <textarea required rows={6} value={messageData.content} onChange={e => setMessageData({...messageData, content: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-amber-500 whitespace-pre-wrap" placeholder="請輸入郵件內文..."></textarea>
-                </div>
-                <div className="flex justify-end gap-3 pt-2">
-                  <button type="button" onClick={() => setIsMessageModalOpen(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg">取消</button>
-                  <button type="submit" className="px-6 py-2 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700">確認發送</button>
-                </div>
+                <div><label className="block text-sm font-semibold mb-1">主旨</label><input type="text" required value={messageData.subject} onChange={e => setMessageData({...messageData, subject: e.target.value})} className="w-full border rounded-lg p-2.5 outline-none focus:border-amber-500" /></div>
+                <div><label className="block text-sm font-semibold mb-1">內容</label><textarea required rows={6} value={messageData.content} onChange={e => setMessageData({...messageData, content: e.target.value})} className="w-full border rounded-lg p-2.5 outline-none focus:border-amber-500 whitespace-pre-wrap" /></div>
+                <div className="flex justify-end gap-3 pt-2"><button type="button" onClick={() => setIsMessageModalOpen(false)} className="px-4 py-2 font-bold hover:bg-slate-100 rounded-lg text-slate-600">取消</button><button type="submit" className="px-6 py-2 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700">確認發送</button></div>
               </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* 活動報名名單 Modal (CMS端) */}
+      {/* 活動報名名單 Modal */}
       {viewingRosterFor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col">
-            <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-2xl">
-              <h3 className="text-lg md:text-xl font-bold text-slate-800">報名名單 (共 {rosterList.length} 人)</h3>
-              <button onClick={() => setViewingRosterFor(null)} className="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
-            </div>
+            <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50"><h3 className="font-bold">報名名單</h3><button onClick={() => setViewingRosterFor(null)} className="text-2xl text-slate-400">&times;</button></div>
             <div className="p-0 md:p-6 overflow-y-auto">
-              {rosterLoading ? (
-                <p className="text-center text-slate-500 py-8">載入名單中...</p>
-              ) : rosterList.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">目前尚無人報名</p>
-              ) : (
-                <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-100 text-slate-800 whitespace-nowrap">
-                      <tr>
-                        <th className="p-3 md:rounded-tl-lg">姓名</th>
-                        <th className="p-3">電話</th>
-                        <th className="p-3">Email</th>
-                        <th className="p-3">畢業年</th>
-                        <th className="p-3 md:rounded-tr-lg">備註</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rosterList.map(user => (
-                        <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
-                          <td className="p-3 font-semibold text-slate-900 whitespace-nowrap">{user.name}</td>
-                          <td className="p-3 whitespace-nowrap">{user.phone}</td>
-                          <td className="p-3 whitespace-nowrap">{user.email}</td>
-                          <td className="p-3">{user.gradYear || '-'}</td>
-                          <td className="p-3 min-w-[150px]">{user.remarks || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <table className="w-full text-left text-sm text-slate-600"><thead className="bg-slate-100"><tr><th className="p-3">姓名</th><th className="p-3">電話</th><th className="p-3">Email</th><th className="p-3">畢業年</th><th className="p-3">備註</th></tr></thead><tbody>{rosterList.map(u => (<tr key={u.id} className="border-b"><td className="p-3 font-semibold">{u.chineseName || u.name} {u.englishName}</td><td className="p-3">{u.phone}</td><td className="p-3">{u.email}</td><td className="p-3">{u.gradYear || '-'}</td><td className="p-3">{u.remarks || '-'}</td></tr>))}</tbody></table>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
