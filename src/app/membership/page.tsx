@@ -8,9 +8,9 @@ import Footer from '@/components/Footer';
 import Image from 'next/image';
 
 export default function MembershipPage() {
-  // 🌟 新增 studentClass (班別) 與 studentId (學號)
+  // 🌟 將 name 拆分為 chineseName 與 englishName
   const [formData, setFormData] = useState({ 
-    name: '', phone: '', email: '', gradYear: '', studentClass: '', studentId: '', address: '' 
+    chineseName: '', englishName: '', phone: '', email: '', gradYear: '', studentClass: '', studentId: '', address: '' 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -52,17 +52,32 @@ export default function MembershipPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* 第一列：中英文姓名 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">中/英文姓名 *</label>
-                  <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">中文姓名 *</label>
+                  <input type="text" required value={formData.chineseName} onChange={e => setFormData({...formData, chineseName: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">英文姓名 (English Name) *</label>
+                  <input type="text" required value={formData.englishName} onChange={e => setFormData({...formData, englishName: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
+
+              {/* 第二列：聯絡方式 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">聯絡電話 *</label>
                   <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
+                  <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
               </div>
               
+              {/* 第三列：學籍資料 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">畢業年份 *</label>
@@ -78,14 +93,12 @@ export default function MembershipPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
-                <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
+              {/* 第四列：地址 */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">通訊地址 (選填)</label>
                 <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
+              
               <div className="pt-6">
                 <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-blue-600 text-white font-bold text-lg rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md">
                   {isSubmitting ? '資料傳送中...' : '送出會員申請表'}
